@@ -72,7 +72,7 @@ public class MainApp extends Application {
 
         scene.getStylesheets().add("data:text/css," + css.replace("\n", "").replace(" ", "%20"));
 
-        stage.setTitle("Haptic Glove Monitor");
+        stage.setTitle("Haptic Wristband Monitor");
         stage.setScene(scene);
         stage.setOnCloseRequest(e -> shutdown());
         stage.show();
@@ -136,7 +136,7 @@ public class MainApp extends Application {
     }
 
     private Node compassLabel() {
-        Label label = new Label("GLOVE");
+        Label label = new Label("WRISTBAND");
         label.getStyleClass().add("compass-label");
         StackPane pane = new StackPane(label);
         pane.setPrefSize(70, 70);
