@@ -61,7 +61,16 @@ public class MainApp extends Application {
         root.setPadding(new Insets(12));
 
         Scene scene = new Scene(root, 780, 720);
-        scene.getStylesheets().add(getClass().getResource("/com/hapticglove/style.css").toExternalForm());
+
+        String css = """
+        .status-connected { -fx-text-fill: #2e7d32; -fx-font-weight: bold; }
+        .status-disconnected { -fx-text-fill: #c62828; -fx-font-weight: bold; }
+        .compass-box { -fx-border-color: #b0bec5; -fx-border-radius: 5px; -fx-alignment: center; }
+        .compass-label { -fx-font-weight: bold; -fx-text-fill: #37474f; }
+        .server-status { -fx-font-style: italic; -fx-text-fill: #555555; }
+        """;
+
+        scene.getStylesheets().add("data:text/css," + css.replace("\n", "").replace(" ", "%20"));
 
         stage.setTitle("Haptic Glove Monitor");
         stage.setScene(scene);
