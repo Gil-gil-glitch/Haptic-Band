@@ -3,6 +3,8 @@ module com.example.hapticband {
     requires javafx.fxml;
     requires javafx.web;
 
+    requires com.fazecast.jSerialComm;
+
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;
     requires net.synedra.validatorfx;
