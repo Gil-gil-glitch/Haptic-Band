@@ -5,6 +5,8 @@ from typing import Optional
 class HapticClient:
     """
     Python client for communicating with the Haptic Wristband JavaFX Command Server over TCP socket.
+    This does not talk to the Arduino directly on COM4, but it communicates to the JavaFX Command
+    Server over its address.
     """
     def __init__(self, host: str = 'localhost', port: int = 5050, timeout: float = 2.0):
         self.host = host
