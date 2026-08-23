@@ -51,20 +51,21 @@ public class MainApp extends Application {
     private final CheckBox csvLogCheck = new CheckBox("Log commands to CSV");
 
     private final ComboBox<String> portCombo = new ComboBox<>();
-    private final TextField baudField = new TextField("9600"); // ESP32 uses 115200
+    // Defaulted to 9600 for Arduino
+    private final TextField baudField = new TextField("9600");
     private final Button connectButton = new Button("Connect");
 
     private File csvFile;
     private Writer csvWriter;
     private final DateTimeFormatter timestampFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
-    // Inner class to represent a human-readable pattern step
+    // Inner class to represent a pattern step with exact PWM
     public static class PatternStep {
         String direction;
-        String intensity;
+        int intensity; // Changed to int for raw PWM control
         int durationMs;
 
-        public PatternStep(String direction, String intensity, int durationMs) {
+        public PatternStep(String direction, int intensity, int durationMs) {
             this.direction = direction;
             this.intensity = intensity;
             this.durationMs = durationMs;
@@ -75,7 +76,7 @@ public class MainApp extends Application {
             if (direction.equals("Pause (None)")) {
                 return "Pause for " + durationMs + " ms";
             }
-            return direction + " at " + intensity + " for " + durationMs + " ms";
+            return direction + " at " + intensity + " PWM for " + durationMs + " ms";
         }
     }
 
@@ -84,7 +85,7 @@ public class MainApp extends Application {
         BorderPane root = new BorderPane();
         root.setTop(buildConnectionBar());
         root.setCenter(buildCenter());
-        root.setRight(buildVisualPatternEditor()); // New Accessible Editor
+        root.setRight(buildVisualPatternEditor());
         root.setBottom(buildBottom());
         root.setPadding(new Insets(15));
         root.getStyleClass().add("root-pane");
@@ -242,45 +243,40 @@ public class MainApp extends Application {
         return pane;
     }
 
-    // --- NEW ACCESSIBLE PATTERN BUILDER ---
     private Node buildVisualPatternEditor() {
         VBox layout = new VBox(12);
         layout.setPrefWidth(360);
 
-        // Controls to add a step
         ComboBox<String> dirCombo = new ComboBox<>(FXCollections.observableArrayList(
                 "Top (Forward)", "Right", "Bottom (Back)", "Left", "All Motors", "Pause (None)"
         ));
         dirCombo.setValue("Top (Forward)");
         dirCombo.setPrefWidth(120);
 
-        ComboBox<String> intCombo = new ComboBox<>(FXCollections.observableArrayList(
-                "Low (25%)", "Medium (50%)", "High (75%)", "Max (100%)"
-        ));
-        intCombo.setValue("Max (100%)");
-        intCombo.setPrefWidth(110);
+        // Replaced Preset ComboBox with a numeric Spinner for exact PWM
+        Spinner<Integer> pwmSpinner = new Spinner<>(0, 255, 127, 5); // min, max, default, step
+        pwmSpinner.setEditable(true);
+        pwmSpinner.setPrefWidth(70);
 
         Spinner<Integer> durSpinner = new Spinner<>(50, 5000, 500, 50);
         durSpinner.setEditable(true);
-        durSpinner.setPrefWidth(70);
+        durSpinner.setPrefWidth(75);
 
         Button addBtn = new Button("Add");
 
-        HBox builderRow1 = new HBox(8, new Label("Dir:"), dirCombo, new Label("Int:"), intCombo);
+        HBox builderRow1 = new HBox(8, new Label("Dir:"), dirCombo, new Label("PWM:"), pwmSpinner);
         builderRow1.setAlignment(Pos.CENTER_LEFT);
         HBox builderRow2 = new HBox(8, new Label("Time (ms):"), durSpinner, addBtn);
         builderRow2.setAlignment(Pos.CENTER_LEFT);
 
-        // List view to display the built sequence
         ListView<PatternStep> stepList = new ListView<>();
         stepList.setPrefHeight(250);
         VBox.setVgrow(stepList, Priority.ALWAYS);
 
         addBtn.setOnAction(e -> {
-            stepList.getItems().add(new PatternStep(dirCombo.getValue(), intCombo.getValue(), durSpinner.getValue()));
+            stepList.getItems().add(new PatternStep(dirCombo.getValue(), pwmSpinner.getValue(), durSpinner.getValue()));
         });
 
-        // Edit Controls (Delete/Clear)
         Button removeBtn = new Button("Remove Selected");
         removeBtn.setOnAction(e -> {
             int selected = stepList.getSelectionModel().getSelectedIndex();
@@ -292,7 +288,6 @@ public class MainApp extends Application {
 
         HBox editBtns = new HBox(8, removeBtn, clearBtn);
 
-        // Action Controls (Play, Save, Load)
         Button playBtn = new Button("▶ Play Sequence");
         playBtn.setStyle("-fx-text-fill: #43b581; -fx-border-color: #43b581; -fx-font-weight: bold;");
         playBtn.setMaxWidth(Double.MAX_VALUE);
@@ -328,42 +323,19 @@ public class MainApp extends Application {
         double currentDelayMs = 0;
 
         for (PatternStep step : steps) {
-            // Translate human-readable intensity to PWM
-            int pwm = switch (step.intensity) {
-                case "Low (25%)" -> 64;
-                case "Medium (50%)" -> 127;
-                case "High (75%)" -> 192;
-                case "Max (100%)" -> 255;
-                default -> 0;
-            };
+            // Now grabs the exact PWM value the user entered
+            int pwm = step.intensity;
 
-            // Translate human-readable direction to motor assignments
             int t, r, b, l;
             if (!step.direction.equals("Pause (None)")) {
-                if (step.direction.contains("Top") || step.direction.equals("All Motors")) t = pwm;
-                else {
-                    t = 0;
-                }
-                if (step.direction.contains("Right") || step.direction.equals("All Motors")) r = pwm;
-                else {
-                    r = 0;
-                }
-                if (step.direction.contains("Bottom") || step.direction.equals("All Motors")) b = pwm;
-                else {
-                    b = 0;
-                }
-                if (step.direction.contains("Left") || step.direction.equals("All Motors")) l = pwm;
-                else {
-                    l = 0;
-                }
+                t = (step.direction.contains("Top") || step.direction.equals("All Motors")) ? pwm : 0;
+                r = (step.direction.contains("Right") || step.direction.equals("All Motors")) ? pwm : 0;
+                b = (step.direction.contains("Bottom") || step.direction.equals("All Motors")) ? pwm : 0;
+                l = (step.direction.contains("Left") || step.direction.equals("All Motors")) ? pwm : 0;
             } else {
-                l = 0;
-                b = 0;
-                r = 0;
-                t = 0;
+                t = 0; r = 0; b = 0; l = 0;
             }
 
-            // Create a keyframe for this step
             KeyFrame kf = new KeyFrame(Duration.millis(currentDelayMs),
                     e -> applyAndSend(t, r, b, l, "custom_sequence"));
             timeline.getKeyFrames().add(kf);
@@ -371,7 +343,6 @@ public class MainApp extends Application {
             currentDelayMs += step.durationMs;
         }
 
-        // Always ensure motors turn off completely at the end of the sequence
         KeyFrame endOff = new KeyFrame(Duration.millis(currentDelayMs),
                 e -> applyAndSend(0, 0, 0, 0, "sequence_end"));
         timeline.getKeyFrames().add(endOff);
@@ -411,7 +382,7 @@ public class MainApp extends Application {
                 for (String line : lines) {
                     String[] parts = line.split(",");
                     if (parts.length == 3) {
-                        steps.add(new PatternStep(parts[0], parts[1], Integer.parseInt(parts[2])));
+                        steps.add(new PatternStep(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
                     }
                 }
                 log("Loaded pattern: " + file.getName());
@@ -420,7 +391,6 @@ public class MainApp extends Application {
             }
         }
     }
-    // --- END NEW ACCESSIBLE PATTERN BUILDER ---
 
     private Node buildBottom() {
         logArea.setEditable(false);
