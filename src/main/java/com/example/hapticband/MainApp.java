@@ -14,13 +14,13 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.io.File;
 
 public class MainApp extends Application {
 
@@ -40,12 +40,14 @@ public class MainApp extends Application {
     private final Slider leftSlider = new Slider(0, 255, 0);
 
     private final TextArea logArea = new TextArea();
+    private final TextArea patternEditor = new TextArea(); // New: Pattern Editor
+
     private final Label connectionStatusLabel = new Label("Disconnected");
     private final Label serverStatusLabel = new Label("Command server not started");
     private final CheckBox csvLogCheck = new CheckBox("Log commands to CSV");
 
     private final ComboBox<String> portCombo = new ComboBox<>();
-    private final TextField baudField = new TextField("9600");
+    private final TextField baudField = new TextField("9600"); // 115200 is for ESP32
     private final Button connectButton = new Button("Connect");
 
     private File csvFile;
@@ -56,66 +58,81 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         BorderPane root = new BorderPane();
         root.setTop(buildConnectionBar());
-        root.setCenter(buildCenter());
+
+        // Split layout: Left for Controls, Right for Patterns Customization
+        HBox mainContent = new HBox(15);
+        mainContent.getChildren().addAll(buildLeftPanel(), buildRightPanel());
+        HBox.setHgrow(mainContent.getChildren().get(1), Priority.ALWAYS);
+
+        root.setCenter(mainContent);
         root.setBottom(buildBottom());
-        root.setPadding(new Insets(12));
+        root.setPadding(new Insets(15));
+        root.getStyleClass().add("main-background");
 
-        Scene scene = new Scene(root, 780, 720);
+        Scene scene = new Scene(root, 1050, 720);
 
+        // Modern Dark Theme CSS
         String css = """
-        .status-connected { -fx-text-fill: #2e7d32; -fx-font-weight: bold; }
-        .status-disconnected { -fx-text-fill: #c62828; -fx-font-weight: bold; }
-        .compass-box { -fx-border-color: #b0bec5; -fx-border-radius: 5px; -fx-alignment: center; }
-        .compass-label { -fx-font-weight: bold; -fx-text-fill: #37474f; }
-        .server-status { -fx-font-style: italic; -fx-text-fill: #555555; }
+        .root { -fx-font-family: 'Segoe UI', Helvetica, Arial, sans-serif; }
+        .main-background { -fx-background-color: #1e1e1e; }
+        .label, .check-box { -fx-text-fill: #e0e0e0; }
+        .status-connected { -fx-text-fill: #4caf50; -fx-font-weight: bold; }
+        .status-disconnected { -fx-text-fill: #f44336; -fx-font-weight: bold; }
+        .compass-box { -fx-border-color: #555555; -fx-border-radius: 8px; -fx-alignment: center; -fx-background-color: #2d2d2d; -fx-background-radius: 8px;}
+        .compass-label { -fx-font-weight: bold; -fx-text-fill: #90caf9; -fx-font-size: 11px;}
+        .server-status { -fx-font-style: italic; -fx-text-fill: #9e9e9e; }
+        .titled-pane { -fx-text-fill: #e0e0e0; }
+        .titled-pane > .title { -fx-background-color: #2d2d2d; -fx-border-color: #444; -fx-border-radius: 4px 4px 0 0; }
+        .titled-pane > .content { -fx-background-color: #252525; -fx-border-color: #444; -fx-border-radius: 0 0 4px 4px; }
+        .button { -fx-background-color: #3a3a3a; -fx-text-fill: white; -fx-background-radius: 4px; -fx-cursor: hand; -fx-padding: 6 12 6 12; }
+        .button:hover { -fx-background-color: #505050; }
+        .button-accent { -fx-background-color: #1976d2; -fx-font-weight: bold; }
+        .button-accent:hover { -fx-background-color: #1565c0; }
+        .text-area, .text-field { -fx-control-inner-background: #2b2b2b; -fx-text-fill: #e0e0e0; -fx-border-color: #444; }
         """;
 
         scene.getStylesheets().add("data:text/css," + css.replace("\n", "").replace(" ", "%20"));
 
-        stage.setTitle("Haptic Wristband Monitor");
+        stage.setTitle("Haptic Wristband Studio");
         stage.setScene(scene);
         stage.setOnCloseRequest(e -> shutdown());
         stage.show();
 
         refreshPorts();
         startCommandServer();
-
     }
 
-
     private Node buildConnectionBar() {
-        HBox bar = new HBox(8);
+        HBox bar = new HBox(12);
         bar.setAlignment(Pos.CENTER_LEFT);
-        bar.setPadding(new Insets(0, 0, 12, 0));
+        bar.setPadding(new Insets(0, 0, 15, 0));
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button("Refresh Ports");
         refreshButton.setOnAction(e -> refreshPorts());
-
-        baudField.setPrefWidth(70);
-
+        baudField.setPrefWidth(80);
         connectButton.setOnAction(e -> toggleConnection());
-
+        connectButton.getStyleClass().add("button-accent");
         connectionStatusLabel.getStyleClass().add("status-disconnected");
 
         bar.getChildren().addAll(
-                new Label("Port:"), portCombo,
+                new Label("COM Port:"), portCombo,
                 refreshButton,
-                new Label("Baud:"), baudField,
+                new Label("Baud Rate:"), baudField,
                 connectButton,
                 connectionStatusLabel
         );
         return bar;
     }
 
-    private Node buildCenter() {
-        VBox center = new VBox(18);
-        center.setAlignment(Pos.TOP_CENTER);
+    private Node buildLeftPanel() {
+        VBox panel = new VBox(15);
+        panel.setAlignment(Pos.TOP_CENTER);
+        panel.setPrefWidth(400);
 
-        // Cross layout matching the physical motor positions on the glove
         GridPane cross = new GridPane();
         cross.setAlignment(Pos.CENTER);
-        cross.setHgap(24);
-        cross.setVgap(12);
+        cross.setHgap(30);
+        cross.setVgap(15);
         cross.add(wrap(topGauge), 1, 0);
         cross.add(wrap(leftGauge), 0, 1);
         cross.add(compassLabel(), 1, 1);
@@ -125,8 +142,46 @@ public class MainApp extends Application {
         TitledPane crossPane = new TitledPane("Live Motor Output", cross);
         crossPane.setCollapsible(false);
 
-        center.getChildren().addAll(crossPane, buildManualControls(), buildPresets());
-        return center;
+        panel.getChildren().addAll(crossPane, buildManualControls());
+        return panel;
+    }
+
+    private Node buildRightPanel() {
+        VBox panel = new VBox(15);
+
+        // Setup Pattern Editor
+        patternEditor.setPrefRowCount(12);
+        patternEditor.setStyle("-fx-font-family: 'Consolas', monospace;");
+        patternEditor.setText("""
+        # Format: Top,Right,Bottom,Left,DurationMs
+        # (Values 0-255, Duration in milliseconds)
+        255,0,0,0,300
+        0,255,0,0,300
+        0,0,255,0,300
+        0,0,0,255,300
+        0,0,0,0,500
+        128,128,128,128,500
+        """);
+
+        Button playPattern = new Button("▶ Play Sequence");
+        playPattern.getStyleClass().add("button-accent");
+        playPattern.setOnAction(e -> playCustomPattern());
+
+        Button loadBtn = new Button("Load...");
+        loadBtn.setOnAction(e -> loadPattern());
+
+        Button saveBtn = new Button("Save...");
+        saveBtn.setOnAction(e -> savePattern());
+
+        HBox patternControls = new HBox(8, playPattern, loadBtn, saveBtn);
+        patternControls.setAlignment(Pos.CENTER_LEFT);
+
+        VBox patternBox = new VBox(8, new Label("Sequence Editor"), patternEditor, patternControls);
+        TitledPane customPane = new TitledPane("Custom Pattern Studio", patternBox);
+        customPane.setCollapsible(false);
+
+        panel.getChildren().addAll(customPane, buildPresets());
+        return panel;
     }
 
     private Node wrap(MotorGauge gauge) {
@@ -136,18 +191,19 @@ public class MainApp extends Application {
     }
 
     private Node compassLabel() {
-        Label label = new Label("WRISTBAND");
+        Label label = new Label("BAND\nTOP ⇧");
+        label.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
         label.getStyleClass().add("compass-label");
         StackPane pane = new StackPane(label);
-        pane.setPrefSize(70, 70);
+        pane.setPrefSize(80, 80);
         pane.getStyleClass().add("compass-box");
         return pane;
     }
 
     private Node buildManualControls() {
         GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(8);
+        grid.setHgap(15);
+        grid.setVgap(12);
 
         addSliderRow(grid, 0, "Top", topSlider);
         addSliderRow(grid, 1, "Right", rightSlider);
@@ -159,24 +215,23 @@ public class MainApp extends Application {
                 (int) topSlider.getValue(), (int) rightSlider.getValue(),
                 (int) bottomSlider.getValue(), (int) leftSlider.getValue(), "manual"));
 
-        Button allOffButton = new Button("All Off");
+        Button allOffButton = new Button("Force All Off");
         allOffButton.setOnAction(e -> {
-            topSlider.setValue(0);
-            rightSlider.setValue(0);
-            bottomSlider.setValue(0);
-            leftSlider.setValue(0);
+            topSlider.setValue(0); rightSlider.setValue(0);
+            bottomSlider.setValue(0); leftSlider.setValue(0);
             applyAndSend(0, 0, 0, 0, "manual");
         });
 
-        HBox buttons = new HBox(8, sendButton, allOffButton);
+        HBox buttons = new HBox(10, sendButton, allOffButton);
+        buttons.setPadding(new Insets(10, 0, 0, 0));
         VBox box = new VBox(8, grid, buttons);
-        TitledPane pane = new TitledPane("Manual Control", box);
+        TitledPane pane = new TitledPane("Manual Override", box);
         pane.setCollapsible(false);
         return pane;
     }
 
     private void addSliderRow(GridPane grid, int row, String name, Slider slider) {
-        slider.setPrefWidth(300);
+        slider.setPrefWidth(220);
         Label valueLabel = new Label("0");
         valueLabel.setPrefWidth(30);
         slider.valueProperty().addListener((obs, oldV, newV) ->
@@ -187,47 +242,114 @@ public class MainApp extends Application {
     }
 
     private Node buildPresets() {
-        Button pulseTop = new Button("Pulse Top (100%)");
+        Button pulseTop = new Button("Pulse Top");
         pulseTop.setOnAction(e -> applyAndSend(255, 0, 0, 0, "preset"));
 
-        Button pulseRight = new Button("Pulse Right (50%)");
-        pulseRight.setOnAction(e -> applyAndSend(0, 127, 0, 0, "preset"));
+        Button pulseRight = new Button("Pulse Right");
+        pulseRight.setOnAction(e -> applyAndSend(0, 255, 0, 0, "preset"));
 
         Button allHalf = new Button("All 50%");
         allHalf.setOnAction(e -> applyAndSend(127, 127, 127, 127, "preset"));
 
-        Button allQuarter = new Button("All 25%");
-        allQuarter.setOnAction(e -> applyAndSend(64, 64, 64, 64, "preset"));
-
         Button allOff = new Button("All Off");
         allOff.setOnAction(e -> applyAndSend(0, 0, 0, 0, "preset"));
 
-        Button runSequence = new Button("Run Full Test Sequence");
-        runSequence.setOnAction(e -> runTestSequence());
-
-        FlowPane flow = new FlowPane(8, 8, pulseTop, pulseRight, allHalf, allQuarter, allOff, runSequence);
-        TitledPane pane = new TitledPane("Presets (matches original test script)", flow);
+        FlowPane flow = new FlowPane(10, 10, pulseTop, pulseRight, allHalf, allOff);
+        TitledPane pane = new TitledPane("Quick Tests", flow);
         pane.setCollapsible(false);
         return pane;
     }
 
     private Node buildBottom() {
         logArea.setEditable(false);
-        logArea.setPrefRowCount(8);
+        logArea.setPrefRowCount(6);
+        logArea.setStyle("-fx-font-family: 'Consolas', monospace;");
 
         csvLogCheck.setOnAction(e -> {
-            if (csvLogCheck.isSelected()) {
-                chooseCsvFile();
-            } else {
-                closeCsvWriter();
-            }
+            if (csvLogCheck.isSelected()) chooseCsvFile();
+            else closeCsvWriter();
         });
-
         serverStatusLabel.getStyleClass().add("server-status");
 
-        VBox box = new VBox(6, new Label("Activity Log"), logArea, csvLogCheck, serverStatusLabel);
-        box.setPadding(new Insets(12, 0, 0, 0));
+        HBox bottomControls = new HBox(15, csvLogCheck, serverStatusLabel);
+        bottomControls.setAlignment(Pos.CENTER_LEFT);
+
+        VBox box = new VBox(8, new Label("Activity Log"), logArea, bottomControls);
+        box.setPadding(new Insets(15, 0, 0, 0));
         return box;
+    }
+
+    // Custom Pattern Logic that plays the pattern set by a user
+
+    private void playCustomPattern() {
+        String[] lines = patternEditor.getText().split("\\r?\\n");
+        SequentialTransition sequence = new SequentialTransition();
+
+        log("Compiling custom pattern...");
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i].trim();
+            // Skip comments and empty lines
+            if (line.isEmpty() || line.startsWith("#")) continue;
+
+            String[] parts = line.split(",");
+            if (parts.length >= 5) {
+                try {
+                    int t = Integer.parseInt(parts[0].trim());
+                    int r = Integer.parseInt(parts[1].trim());
+                    int b = Integer.parseInt(parts[2].trim());
+                    int l = Integer.parseInt(parts[3].trim());
+                    int duration = Integer.parseInt(parts[4].trim());
+
+                    PauseTransition step = new PauseTransition(Duration.millis(duration));
+                    step.setOnFinished(e -> applyAndSend(t, r, b, l, "custom"));
+                    sequence.getChildren().add(step);
+                } catch (NumberFormatException ex) {
+                    log("Error parsing pattern on line " + (i + 1) + ": " + line);
+                }
+            }
+        }
+
+        // Safety feature: always turn off motors at the end of the sequence
+        PauseTransition endStep = new PauseTransition(Duration.millis(10));
+        endStep.setOnFinished(e -> applyAndSend(0, 0, 0, 0, "custom_end"));
+        sequence.getChildren().add(endStep);
+
+        sequence.setOnFinished(e -> log("Custom pattern finished."));
+        sequence.play();
+    }
+
+    private void savePattern() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Pattern Script");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+        File file = chooser.showSaveDialog(patternEditor.getScene().getWindow());
+
+        if (file != null) {
+            try {
+                Files.writeString(file.toPath(), patternEditor.getText());
+                log("Pattern saved to: " + file.getName());
+            } catch (IOException e) {
+                log("Failed to save pattern: " + e.getMessage());
+            }
+        }
+    }
+
+    private void loadPattern() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Load Pattern Script");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+        File file = chooser.showOpenDialog(patternEditor.getScene().getWindow());
+
+        if (file != null) {
+            try {
+                String content = Files.readString(file.toPath());
+                patternEditor.setText(content);
+                log("Loaded pattern: " + file.getName());
+            } catch (IOException e) {
+                log("Failed to load pattern: " + e.getMessage());
+            }
+        }
     }
 
     // ------------------------------------------------------- Serial link
@@ -280,9 +402,6 @@ public class MainApp extends Application {
 
     // -------------------------------------------------- Command handling
 
-    /** Updates the UI, sends over serial, and logs. This is the single path
-     *  every command flows through, whether it came from this app's own
-     *  controls or from an external process via CommandServer. */
     private void applyAndSend(int top, int right, int bottom, int left, String source) {
         topGauge.setPwm(top);
         rightGauge.setPwm(right);
@@ -292,38 +411,12 @@ public class MainApp extends Application {
         if (serialManager.isConnected()) {
             try {
                 serialManager.sendMotorValues(top, right, bottom, left);
-                log(String.format("[%s] Sent T=%d R=%d B=%d L=%d", source, top, right, bottom, left));
             } catch (Exception ex) {
                 log("Send failed: " + ex.getMessage());
             }
-        } else {
-            log(String.format("[%s] (not connected) T=%d R=%d B=%d L=%d", source, top, right, bottom, left));
         }
 
         writeCsvRow(top, right, bottom, left, source);
-    }
-
-    private void runTestSequence() {
-        log("Running full test sequence...");
-        int[][] steps = {
-                {255, 0, 0, 0},
-                {0, 127, 0, 0},
-                {127, 127, 127, 127},
-                {64, 64, 64, 64},
-                {0, 0, 0, 0}
-        };
-
-        applyAndSend(steps[0][0], steps[0][1], steps[0][2], steps[0][3], "sequence");
-
-        SequentialTransition seq = new SequentialTransition();
-        for (int i = 1; i < steps.length; i++) {
-            int[] step = steps[i];
-            PauseTransition pause = new PauseTransition(Duration.seconds(1));
-            pause.setOnFinished(e -> applyAndSend(step[0], step[1], step[2], step[3], "sequence"));
-            seq.getChildren().add(pause);
-        }
-        seq.setOnFinished(e -> log("Test sequence complete."));
-        seq.play();
     }
 
     // -------------------------------------------------------- Command server
@@ -331,11 +424,11 @@ public class MainApp extends Application {
     private void startCommandServer() {
         commandServer = new CommandServer(
                 COMMAND_SERVER_PORT,
-                (top, right, bottom, left) -> applyAndSend(top, right, bottom, left, "external"),
-                message -> {
+                (top, right, bottom, left) -> Platform.runLater(() -> applyAndSend(top, right, bottom, left, "external")),
+                message -> Platform.runLater(() -> {
                     serverStatusLabel.setText(message);
                     log(message);
-                }
+                })
         );
         commandServer.start();
     }
@@ -345,6 +438,9 @@ public class MainApp extends Application {
     private void log(String message) {
         String line = "[" + LocalDateTime.now().format(timestampFormat) + "] " + message;
         logArea.appendText(line + System.lineSeparator());
+        // Auto-scroll to bottom
+        logArea.selectPositionCaret(logArea.getLength());
+        logArea.deselect();
     }
 
     private void chooseCsvFile() {
