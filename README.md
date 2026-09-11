@@ -6,6 +6,17 @@ The **Haptic Wristband Monitor** is a JavaFX application designed to control and
 
 Because only one process can hold a COM port open at a time, this application serves as the single owner of the serial link. It allows existing external teleoperation or Python control scripts to send commands to a local socket, while this app forwards those commands to the Arduino and updates the visual interface in real-time. It also provides a robust interface for researchers to manually design, execute, and record custom haptic patterns.
 
+## Current Hardware Wiring Map
+
+| Motor Position (Angle) | Module Pin | Arduino Pin | Reason |
+|---|---|---|---|
+| **Top (0°)** | IN | 3 | (Your current setup) |
+| **Right (90°)** | IN | 5 | Next available PWM pin |
+| **Bottom (180°)** | IN | 6 | Next available PWM pin |
+| **Left (270°)** | IN | 9 | Next available PWM pin |
+| **All Motors** | VCC | 5V | Powers the modules (ensure your power supply can handle 4 motors simultaneously) |
+| **All Motors** | GND | GND | Completes the circuit |
+
 ## Features
 
 * **Serial Port Management:** Connects to the Arduino via a designated COM port and baud rate (default 9600), handling the initialization and 2-second reset delay automatically.
