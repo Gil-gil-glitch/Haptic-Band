@@ -143,7 +143,8 @@ public class MainApp_2 extends Application {
             .app-scroll .scroll-bar:vertical   { -fx-background-color:#1c1f26; }
             .main-split { -fx-background-color:#1c1f26; }
             .main-split>.split-pane-divider { -fx-background-color:#2c2f33; -fx-padding:0 1 0 1; }
-            .label      { -fx-text-fill:#b9bbbe; }
+            .label      { -fx-text-fill:#e6e7eb; }
+            .server-status      { -fx-font-style:italic; -fx-text-fill:#9a9ea6; }
             .button     { -fx-background-color:#2c2f33; -fx-text-fill:#ffffff;
                           -fx-border-color:#4f545c; -fx-border-radius:4px;
                           -fx-background-radius:4px; -fx-padding:6 12 6 12; -fx-cursor:hand; }
@@ -166,7 +167,6 @@ public class MainApp_2 extends Application {
             .compass-label{ -fx-font-weight:bold; -fx-text-fill:#7289da; }
             .status-connected   { -fx-text-fill:#43b581; -fx-font-weight:bold; }
             .status-disconnected{ -fx-text-fill:#f04747; -fx-font-weight:bold; }
-            .server-status      { -fx-font-style:italic; -fx-text-fill:#72767d; }
             .imu-test-btn { -fx-background-color:#5865f2; -fx-text-fill:white;
                             -fx-border-radius:4px; -fx-background-radius:4px;
                             -fx-font-weight:bold; -fx-cursor:hand; }
@@ -214,7 +214,7 @@ public class MainApp_2 extends Application {
         Node rightColumn   = buildVisualPatternEditor();
 
         SplitPane split = new SplitPane(leftColumn, middleColumn, rightColumn);
-        split.setDividerPositions(0.32, 0.66);
+        split.setDividerPositions(0.37, 0.60);
         split.getStyleClass().add("main-split");
         return split;
     }
@@ -476,7 +476,7 @@ public class MainApp_2 extends Application {
                 new Rotate(-22, Rotate.X_AXIS),
                 new Translate(0, 0, -420));
 
-        SubScene subScene = new SubScene(wristGroup, 480, 260, true,
+        SubScene subScene = new SubScene(wristGroup, 360, 220, true,
                 SceneAntialiasing.BALANCED);
         subScene.setFill(Color.web("#14161a"));
         subScene.setCamera(camera);
@@ -485,7 +485,7 @@ public class MainApp_2 extends Application {
         // to fill whatever space that column has instead of staying a
         // small fixed box.
         StackPane holder = new StackPane(subScene);
-        holder.setMinSize(280, 280);
+        holder.setMinSize(220, 220);
         holder.setStyle("-fx-background-color:#14161a;");
         subScene.widthProperty().bind(holder.widthProperty());
         subScene.heightProperty().bind(holder.heightProperty());
