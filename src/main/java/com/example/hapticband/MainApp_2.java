@@ -17,6 +17,9 @@ import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -93,6 +96,42 @@ public class MainApp_2 extends Application {
     private Writer csvWriter;
     private final DateTimeFormatter timestampFormat =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  Motor PWM history (for the diagnostics chart)
+    // ══════════════════════════════════════════════════════════════════════
+    private static final int HISTORY_MAX_POINTS = 300;   // rolling window
+    private static final Duration HISTORY_SAMPLE_INTERVAL = Duration.seconds(1);
+
+    private final XYChart.Series<Number, Number> topHistory    = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> rightHistory  = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> bottomHistory = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> leftHistory   = new XYChart.Series<>();
+
+    private volatile int currentTop, currentRight, currentBottom, currentLeft;
+    private int    historyElapsedSeconds = 0;
+    private Timeline historySampler;
+    private Stage diagnosticsStage;
+
+    private static final String DIAGNOSTICS_CSS = """
+        .chart { -fx-background-color:#1c1f26; }
+        .chart-plot-background { -fx-background-color:#14161a; }
+        .chart-vertical-grid-lines,.chart-horizontal-grid-lines { -fx-stroke:#2c2f33; }
+        .axis { -fx-tick-label-fill:#e6e7eb; }
+        .axis-label,.chart-title { -fx-text-fill:#ffffff; -fx-font-weight:bold; }
+        .chart-legend { -fx-background-color:#1c1f26; }
+        .chart-legend-item { -fx-text-fill:#e6e7eb; }
+        .default-color0.chart-series-line { -fx-stroke:#ff4d4d; -fx-stroke-width:2px; }
+        .default-color1.chart-series-line { -fx-stroke:#4da6ff; -fx-stroke-width:2px; }
+        .default-color2.chart-series-line { -fx-stroke:#ffd24d; -fx-stroke-width:2px; }
+        .default-color3.chart-series-line { -fx-stroke:#4dff88; -fx-stroke-width:2px; }
+        .root-pane  { -fx-background-color:#1c1f26; -fx-font-family:'Segoe UI',sans-serif; }
+        .label      { -fx-text-fill:#e6e7eb; }
+        .button     { -fx-background-color:#2c2f33; -fx-text-fill:#ffffff;
+                      -fx-border-color:#4f545c; -fx-border-radius:4px;
+                      -fx-background-radius:4px; -fx-padding:6 12 6 12; -fx-cursor:hand; }
+        .button:hover{ -fx-background-color:#40444b; -fx-border-color:#7289da; }
+        """;
 
     // ── Inner class: pattern step ──────────────────────────────────────────
     public static class PatternStep {
@@ -184,6 +223,7 @@ public class MainApp_2 extends Application {
 
         refreshPorts();
         startCommandServer();
+        startHistorySampler();
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -235,7 +275,13 @@ public class MainApp_2 extends Application {
         cross.add(wrap(rightGauge),  2, 1);
         cross.add(wrap(bottomGauge), 1, 2);
 
-        TitledPane crossPane = new TitledPane("Live Motor Status", cross);
+        Button diagnosticsBtn = new Button("📈 View Motor History");
+        diagnosticsBtn.setOnAction(e -> openDiagnosticsWindow());
+
+        VBox crossBox = new VBox(8, cross, diagnosticsBtn);
+        crossBox.setAlignment(Pos.CENTER);
+
+        TitledPane crossPane = new TitledPane("Live Motor Status", crossBox);
         crossPane.setCollapsible(true);
         crossPane.setExpanded(true);
 
@@ -843,6 +889,11 @@ public class MainApp_2 extends Application {
         bottomGauge.setPwm(bottom);
         leftGauge  .setPwm(left);
 
+        // Remember the latest values so the diagnostics history sampler
+        // (a fixed-interval Timeline) always plots the current PWM, even
+        // during stretches where nothing changes.
+        currentTop = top; currentRight = right; currentBottom = bottom; currentLeft = left;
+
         // Idle colour: steel-blue (#1a1a2e)   Active colour: vivid orange-red
         // Specular brightens on active to give a glowing effect
         updateMotorMaterial(topMat,    top);
@@ -876,6 +927,90 @@ public class MainApp_2 extends Application {
         mat.setSpecularColor(Color.web("#ffffff").interpolate(
                 Color.web("#ff8c00"), t));
         mat.setSpecularPower(64 - t * 48);     // tighter highlight when bright
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  Diagnostics: motor PWM history chart
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Starts a fixed-interval Timeline that records each motor's current
+     *  PWM once a second, so the diagnostics chart shows a continuous
+     *  vibration-intensity-over-time trace for all four motors. */
+    private void startHistorySampler() {
+        topHistory.setName("Top");
+        rightHistory.setName("Right");
+        bottomHistory.setName("Bottom");
+        leftHistory.setName("Left");
+
+        historySampler = new Timeline(
+                new KeyFrame(HISTORY_SAMPLE_INTERVAL, e -> recordHistorySample()));
+        historySampler.setCycleCount(Timeline.INDEFINITE);
+        historySampler.play();
+    }
+
+    private void recordHistorySample() {
+        historyElapsedSeconds++;
+        addSample(topHistory,    currentTop);
+        addSample(rightHistory,  currentRight);
+        addSample(bottomHistory, currentBottom);
+        addSample(leftHistory,   currentLeft);
+    }
+
+    private void addSample(XYChart.Series<Number, Number> series, int value) {
+        series.getData().add(new XYChart.Data<>(historyElapsedSeconds, value));
+        if (series.getData().size() > HISTORY_MAX_POINTS) {
+            series.getData().remove(0);
+        }
+    }
+
+    /** Opens (or refocuses) a standalone window with the live PWM-over-time
+     *  chart for all four motors — the "diagnostics" view. */
+    private void openDiagnosticsWindow() {
+        if (diagnosticsStage != null) {
+            diagnosticsStage.toFront();
+            diagnosticsStage.requestFocus();
+            return;
+        }
+
+        NumberAxis xAxis = new NumberAxis();
+        xAxis.setLabel("Time (s)");
+        xAxis.setForceZeroInRange(false);
+
+        NumberAxis yAxis = new NumberAxis(0, 255, 32);
+        yAxis.setLabel("PWM (0–255)");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("Motor Vibration (PWM) Over Time");
+        chart.setAnimated(false);
+        chart.setCreateSymbols(false);
+        chart.getData().addAll(topHistory, rightHistory, bottomHistory, leftHistory);
+
+        Button clearBtn = new Button("Clear History");
+        clearBtn.setOnAction(e -> {
+            topHistory.getData().clear();
+            rightHistory.getData().clear();
+            bottomHistory.getData().clear();
+            leftHistory.getData().clear();
+            historyElapsedSeconds = 0;
+        });
+
+        HBox buttonRow = new HBox(clearBtn);
+        buttonRow.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox root = new VBox(10, chart, buttonRow);
+        root.setPadding(new Insets(15));
+        root.setStyle("-fx-background-color:#1c1f26;");
+        VBox.setVgrow(chart, Priority.ALWAYS);
+
+        Scene scene = new Scene(root, 760, 480);
+        scene.getStylesheets().add(
+                "data:text/css," + DIAGNOSTICS_CSS.replace("\n", "").replace(" ", "%20"));
+
+        diagnosticsStage = new Stage();
+        diagnosticsStage.setTitle("Motor Diagnostics");
+        diagnosticsStage.setScene(scene);
+        diagnosticsStage.setOnHidden(e -> diagnosticsStage = null);
+        diagnosticsStage.show();
     }
 
     // ── Demo sweep ────────────────────────────────────────────────────────
@@ -964,6 +1099,7 @@ public class MainApp_2 extends Application {
     private void shutdown() {
         applyAndSend(0, 0, 0, 0, "shutdown");
         if (commandServer != null) commandServer.stop();
+        if (historySampler != null) historySampler.stop();
         serialManager.disconnect();
         closeCsvWriter();
         Platform.exit();
