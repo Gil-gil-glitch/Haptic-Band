@@ -211,7 +211,7 @@ public class MainApp_2 extends Application {
 
     private Node buildThreeColumnSplit() {
         Node leftColumn    = buildLeftColumn();
-        Node middleColumn  = build3DView();
+        Node middleColumn  = buildMiddleColumn();
         Node rightColumn   = buildVisualPatternEditor();
 
         SplitPane split = new SplitPane(leftColumn, middleColumn, rightColumn);
@@ -240,8 +240,26 @@ public class MainApp_2 extends Application {
         crossPane.setExpanded(true);
 
         center.getChildren().addAll(crossPane, buildManualControls(),
-                buildPresets(), buildMockIMU());
+                buildPresets());
         return center;
+    }
+
+    /**
+     * Middle column: the 3-D view stacked above Mock IMU Telemetry — the
+     * sliders that actually drive the wristband's rotation live right next
+     * to what they're rotating. The 3-D view shrinks to share height with
+     * the telemetry panel instead of consuming the whole column.
+     */
+    private Node buildMiddleColumn() {
+        VBox middle = new VBox(10);
+        middle.setAlignment(Pos.TOP_CENTER);
+
+        Node view3D  = build3DView();
+        Node mockIMU = buildMockIMU();
+        VBox.setVgrow(view3D, Priority.ALWAYS);
+
+        middle.getChildren().addAll(view3D, mockIMU);
+        return middle;
     }
 
     private Node wrap(MotorGauge gauge) {
