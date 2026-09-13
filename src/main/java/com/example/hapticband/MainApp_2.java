@@ -121,8 +121,7 @@ public class MainApp_2 extends Application {
     public void start(Stage stage) {
         BorderPane root = new BorderPane();
         root.setTop(buildConnectionBar());
-        root.setCenter(buildCenter());
-        root.setRight(buildVisualPatternEditor());
+        root.setCenter(buildThreeColumnSplit());
         root.setBottom(buildBottom());
         root.setPadding(new Insets(15));
         root.getStyleClass().add("root-pane");
@@ -142,6 +141,8 @@ public class MainApp_2 extends Application {
             .root-pane  { -fx-background-color:#1c1f26; -fx-font-family:'Segoe UI',sans-serif; }
             .app-scroll, .app-scroll>.viewport { -fx-background-color:#1c1f26; }
             .app-scroll .scroll-bar:vertical   { -fx-background-color:#1c1f26; }
+            .main-split { -fx-background-color:#1c1f26; }
+            .main-split>.split-pane-divider { -fx-background-color:#2c2f33; -fx-padding:0 1 0 1; }
             .label      { -fx-text-fill:#b9bbbe; }
             .button     { -fx-background-color:#2c2f33; -fx-text-fill:#ffffff;
                           -fx-border-color:#4f545c; -fx-border-radius:4px;
@@ -207,7 +208,18 @@ public class MainApp_2 extends Application {
         return bar;
     }
 
-    private Node buildCenter() {
+    private Node buildThreeColumnSplit() {
+        Node leftColumn    = buildLeftColumn();
+        Node middleColumn  = build3DView();
+        Node rightColumn   = buildVisualPatternEditor();
+
+        SplitPane split = new SplitPane(leftColumn, middleColumn, rightColumn);
+        split.setDividerPositions(0.32, 0.66);
+        split.getStyleClass().add("main-split");
+        return split;
+    }
+
+    private Node buildLeftColumn() {
         VBox center = new VBox(10);
         center.setAlignment(Pos.TOP_CENTER);
         center.setPadding(new Insets(0, 15, 0, 0));
@@ -227,8 +239,7 @@ public class MainApp_2 extends Application {
         crossPane.setExpanded(true);
 
         center.getChildren().addAll(crossPane, buildManualControls(),
-                buildPresets(), build3DView(),
-                buildMockIMU());
+                buildPresets(), buildMockIMU());
         return center;
     }
 
@@ -445,31 +456,43 @@ public class MainApp_2 extends Application {
                 ambient, keyLight, fillLight, rimLight
         );
 
-        // Lay cylinder horizontally (arm extending right), then a fixed
-        // 3/4 presentation tilt so the TOP/RIGHT/BOTTOM/LEFT motors don't
-        // line up behind one another from the camera (a pure side-on view
-        // hides two of the four directly behind the other two). IMU
-        // rotations are still applied on top of this base orientation.
-        Rotate presentationTiltY = new Rotate(35, Rotate.Y_AXIS);
-        Rotate presentationTiltX = new Rotate(-22, Rotate.X_AXIS);
-
+        // Lay cylinder horizontally (arm extending right). From here on,
+        // wristGroup's transform represents ONLY the wrist's actual
+        // rotation state (pitch/yaw/roll from the IMU / mock sliders) —
+        // nothing else is baked into the model itself.
         wristGroup.getTransforms().addAll(
                 new Rotate(90, Rotate.Z_AXIS),
-                presentationTiltY, presentationTiltX,
                 rotateX, rotateY, rotateZ);
 
+        // The CAMERA, not the model, is responsible for the default view.
+        // It orbits to a fixed 3/4 vantage point so all four motors are
+        // visible from the start, and it stays there no matter how the
+        // wrist itself rotates — the two concerns stay fully separate.
         PerspectiveCamera camera = new PerspectiveCamera(true);
-        camera.setTranslateZ(-420);
         camera.setNearClip(0.1);
         camera.setFarClip(1200);
+        camera.getTransforms().addAll(
+                new Rotate(35, Rotate.Y_AXIS),
+                new Rotate(-22, Rotate.X_AXIS),
+                new Translate(0, 0, -420));
 
         SubScene subScene = new SubScene(wristGroup, 480, 260, true,
                 SceneAntialiasing.BALANCED);
         subScene.setFill(Color.web("#14161a"));
         subScene.setCamera(camera);
 
-        TitledPane pane = new TitledPane("3D Wristband Visualization", subScene);
+        // Now that the 3-D view has its own dedicated column, let it grow
+        // to fill whatever space that column has instead of staying a
+        // small fixed box.
+        StackPane holder = new StackPane(subScene);
+        holder.setMinSize(280, 280);
+        holder.setStyle("-fx-background-color:#14161a;");
+        subScene.widthProperty().bind(holder.widthProperty());
+        subScene.heightProperty().bind(holder.heightProperty());
+
+        TitledPane pane = new TitledPane("3D Wristband Visualization", holder);
         pane.setCollapsible(false);
+        pane.setMaxHeight(Double.MAX_VALUE);
         return pane;
     }
 
@@ -642,7 +665,7 @@ public class MainApp_2 extends Application {
 
         VBox box = new VBox(10, new Label("Steps:"), stepList, form,
                 patternButtons, runBtn, ioButtons);
-        box.setPadding(new Insets(0, 0, 0, 15));
+        box.setPadding(new Insets(5, 10, 5, 10));
 
         TitledPane pane = new TitledPane("Visual Pattern Sequencer", box);
         pane.setCollapsible(false);
