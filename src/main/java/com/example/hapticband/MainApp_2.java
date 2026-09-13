@@ -160,6 +160,7 @@ public class MainApp_2 extends Application {
             .combo-box .list-cell{ -fx-text-fill:black; }
             .titled-pane>.title  { -fx-background-color:#23272a;
                                    -fx-text-fill:#ffffff; -fx-font-weight:bold; }
+            .titled-pane>.title>.text { -fx-fill:#ffffff; -fx-font-weight:bold; }
             .titled-pane>.content{ -fx-background-color:#1e2124;
                                    -fx-border-color:#1c1f26; }
             .compass-box  { -fx-border-color:#7289da; -fx-border-radius:8px;
@@ -474,7 +475,7 @@ public class MainApp_2 extends Application {
         camera.getTransforms().addAll(
                 new Rotate(35, Rotate.Y_AXIS),
                 new Rotate(-22, Rotate.X_AXIS),
-                new Translate(0, 0, -420));
+                new Translate(0, 0, -640));
 
         SubScene subScene = new SubScene(wristGroup, 360, 220, true,
                 SceneAntialiasing.BALANCED);
