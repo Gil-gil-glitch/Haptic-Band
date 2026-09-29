@@ -92,25 +92,23 @@ public class MainApp extends Application {
 
         Scene scene = new Scene(root, 1050, 780);
 
-        String css = """
-        .root-pane { -fx-background-color: #23272a; -fx-font-family: 'Segoe UI', sans-serif; }
-        .label { -fx-text-fill: #b9bbbe; }
-        .button { -fx-background-color: #2c2f33; -fx-text-fill: #ffffff; -fx-border-color: #4f545c; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 6 12 6 12; -fx-cursor: hand; }
-        .button:hover { -fx-background-color: #40444b; -fx-border-color: #7289da; }
-        .text-area, .list-view { -fx-control-inner-background: #1e2124; -fx-text-fill: #43b581; -fx-border-color: #4f545c; }
-        .list-cell { -fx-text-fill: #ffffff; }
-        .list-cell:filled:selected:focused, .list-cell:filled:selected { -fx-background-color: #7289da; -fx-text-fill: white; }
-        .text-field { -fx-control-inner-background: #1e2124; -fx-text-fill: #ffffff; -fx-border-color: #4f545c; }
-        .combo-box, .spinner { -fx-background-color: #2c2f33; -fx-border-color: #4f545c; }
-        .combo-box .list-cell { -fx-text-fill: black; }
-        .titled-pane > .title { -fx-background-color: #2c2f33; -fx-text-fill: #ffffff; -fx-font-weight: bold; }
-        .titled-pane > .content { -fx-background-color: #282b30; -fx-border-color: #23272a; }
-        .compass-box { -fx-border-color: #7289da; -fx-border-radius: 8px; -fx-background-color: #2c2f33; -fx-alignment: center; }
-        .compass-label { -fx-font-weight: bold; -fx-text-fill: #7289da; }
-        .status-connected { -fx-text-fill: #43b581; -fx-font-weight: bold; }
-        .status-disconnected { -fx-text-fill: #f04747; -fx-font-weight: bold; }
-        .server-status { -fx-font-style: italic; -fx-text-fill: #72767d; }
-        """;
+        String css = ".root-pane { -fx-background-color: #23272a; -fx-font-family: 'Segoe UI', sans-serif; }\n" +
+                     ".label { -fx-text-fill: #b9bbbe; }\n" +
+                     ".button { -fx-background-color: #2c2f33; -fx-text-fill: #ffffff; -fx-border-color: #4f545c; -fx-border-radius: 4px; -fx-background-radius: 4px; -fx-padding: 6 12 6 12; -fx-cursor: hand; }\n" +
+                     ".button:hover { -fx-background-color: #40444b; -fx-border-color: #7289da; }\n" +
+                     ".text-area, .list-view { -fx-control-inner-background: #1e2124; -fx-text-fill: #43b581; -fx-border-color: #4f545c; }\n" +
+                     ".list-cell { -fx-text-fill: #ffffff; }\n" +
+                     ".list-cell:filled:selected:focused, .list-cell:filled:selected { -fx-background-color: #7289da; -fx-text-fill: white; }\n" +
+                     ".text-field { -fx-control-inner-background: #1e2124; -fx-text-fill: #ffffff; -fx-border-color: #4f545c; }\n" +
+                     ".combo-box, .spinner { -fx-background-color: #2c2f33; -fx-border-color: #4f545c; }\n" +
+                     ".combo-box .list-cell { -fx-text-fill: black; }\n" +
+                     ".titled-pane > .title { -fx-background-color: #2c2f33; -fx-text-fill: #ffffff; -fx-font-weight: bold; }\n" +
+                     ".titled-pane > .content { -fx-background-color: #282b30; -fx-border-color: #23272a; }\n" +
+                     ".compass-box { -fx-border-color: #7289da; -fx-border-radius: 8px; -fx-background-color: #2c2f33; -fx-alignment: center; }\n" +
+                     ".compass-label { -fx-font-weight: bold; -fx-text-fill: #7289da; }\n" +
+                     ".status-connected { -fx-text-fill: #43b581; -fx-font-weight: bold; }\n" +
+                     ".status-disconnected { -fx-text-fill: #f04747; -fx-font-weight: bold; }\n" +
+                     ".server-status { -fx-font-style: italic; -fx-text-fill: #72767d; }\n";
 
         scene.getStylesheets().add("data:text/css," + css.replace("\n", "").replace(" ", "%20"));
 

@@ -1,103 +1,72 @@
+"""Client library for controlling the wristband via the app's CommandServer.
+
+This does not open the COM port; it only talks to the CommandServer socket.
+
+Example:
+    with HapticClient() as h:
+        h.pulse_direction("top", 200, 0.5)
+"""
 import socket
+import threading
 import time
-from typing import Optional
+
+
+def _clamp(v: int) -> int:
+    return max(0, min(255, int(v)))
+
 
 class HapticClient:
-    """
-    Python client for communicating with the Haptic Wristband JavaFX Command Server over TCP socket.
-    This does not talk to the Arduino directly on COM4, but it communicates to the JavaFX Command
-    Server over its address.
-    """
-    def __init__(self, host: str = 'localhost', port: int = 5050, timeout: float = 2.0):
+    def __init__(self, host="localhost", port=5050):
         self.host = host
         self.port = port
-        self.timeout = timeout
-        self.socket: Optional[socket.socket] = None
+        self._sock = None
+        self._lock = threading.Lock()
 
-    def connect(self) -> bool:
+    def connect(self):
+        if self.is_connected():
+            return
+        self._sock = socket.create_connection((self.host, self.port))
+
+    def is_connected(self) -> bool:
+        return self._sock is not None
+
+    def send_raw(self, top, right, bottom, left):
+        """Send raw PWM values (0-255), clamped, for all four motors."""
+        with self._lock:
+            if not self.is_connected():
+                raise ConnectionError("HapticClient is not connected to server.")
+            command = f"{_clamp(top)},{_clamp(right)},{_clamp(bottom)},{_clamp(left)}\n"
+            self._sock.sendall(command.encode("utf-8"))
+
+    def pulse_direction(self, direction: str, pwm: int, duration_s: float):
+        """Pulse one motor ('top', 'right', 'bottom', 'left') then stop all.
+
+        Note: duration is in SECONDS here (Java version used milliseconds).
         """
-        Establishes a connection to the JavaFX command server.
-        """
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(self.timeout)
-            self.socket.connect((self.host, self.port))
-            print(f"[HapticClient] Connected to server at {self.host}:{self.port}")
-            return True
-
-        except (socket.error, ConnectionRefusedError) as e:
-            print(f"[HapticClient] Connection failed: {e}")
-            self.socket = None
-            return False
-
-    def send_raw(self, top: int, right: int, bottom: int, left: int) -> bool:
-        """
-        Sends raw PWM values (0-255) for all four motors.
-        Values are automatically clamped to the valid 0-255 range.
-        """
-
-        if not self.socket:
-            print("[HapticClient] Cannot send: Not connected to server.")
-            return False
-
-        # Values clamped between 0 and 255
-        top = max(0, min(255, int(top)))
-        right = max(0, min(255, int(right)))
-        bottom = max(0, min(255, int(bottom)))
-        left = max(0, min(255, int(left)))
-
-        # Format string expected by CommandServer / Arduino
-        command = f"{top},{right},{bottom},{left}\n"
-
-        try:
-            self.socket.sendall(command.encode('utf-8'))
-            return True
-        except socket.error as e:
-            print(f"[HapticClient] Send failed: {e}")
-            self.disconnect()
-            return False
-
-    # Directional Helper Methods
-
-    def stop_all(self):
-        """
-        Turns off all motors immediately.
-        """
-        self.send_raw(0, 0, 0, 0)
-
-    def pulse_direction(self, direction: str, pwm: int = 255, duration: float = 0.5):
-        """
-        Pulses a specific motor ('top', 'right', 'bottom', 'left') at a given PWM for a duration in seconds.
-        """
-        direction = direction.lower()
-        t = pwm if direction == 'top' else 0
-        r = pwm if direction == 'right' else 0
-        b = pwm if direction == 'bottom' else 0
-        l = pwm if direction == 'left' else 0
-
-        self.send_raw(t, r, b, l)
-        time.sleep(duration)
+        d = direction.lower()
+        self.send_raw(pwm if d == "top" else 0,
+                      pwm if d == "right" else 0,
+                      pwm if d == "bottom" else 0,
+                      pwm if d == "left" else 0)
+        time.sleep(duration_s)
         self.stop_all()
 
-    def disconnect(self):
-        """
-        Safely stops all motors and closes the socket connection.
-        """
-        if self.socket:
-            try:
+    def stop_all(self):
+        self.send_raw(0, 0, 0, 0)
+
+    def close(self):
+        try:
+            if self.is_connected():
                 self.stop_all()
-                self.socket.close()
-
-            except socket.error:
-                pass
-
-            finally:
-                self.socket = None
-                print("[HapticClient] Disconnected from server.")
+                self._sock.close()
+        except OSError:
+            pass
+        finally:
+            self._sock = None
 
     def __enter__(self):
         self.connect()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.disconnect()
+    def __exit__(self, *exc):
+        self.close()
