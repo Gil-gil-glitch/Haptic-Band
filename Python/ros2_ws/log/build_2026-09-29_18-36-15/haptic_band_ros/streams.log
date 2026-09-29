@@ -1,0 +1,40 @@
+[0.530s] Invoking command in '/home/gilbertsoco/Haptic-Band/Python/ros2_ws/src/haptic_band_ros': PYTHONPATH=/home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/haptic_band_ros build --build-base /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build install --record /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/install.log --install-scripts $base/lib/haptic_band_ros --single-version-externally-managed install_data
+[0.719s] running egg_info
+[0.719s] creating ../../build/haptic_band_ros/haptic_band_ros.egg-info
+[0.719s] writing ../../build/haptic_band_ros/haptic_band_ros.egg-info/PKG-INFO
+[0.720s] writing dependency_links to ../../build/haptic_band_ros/haptic_band_ros.egg-info/dependency_links.txt
+[0.720s] writing entry points to ../../build/haptic_band_ros/haptic_band_ros.egg-info/entry_points.txt
+[0.720s] writing requirements to ../../build/haptic_band_ros/haptic_band_ros.egg-info/requires.txt
+[0.720s] writing top-level names to ../../build/haptic_band_ros/haptic_band_ros.egg-info/top_level.txt
+[0.720s] writing manifest file '../../build/haptic_band_ros/haptic_band_ros.egg-info/SOURCES.txt'
+[0.721s] reading manifest file '../../build/haptic_band_ros/haptic_band_ros.egg-info/SOURCES.txt'
+[0.721s] adding license file 'LICENSE'
+[0.722s] writing manifest file '../../build/haptic_band_ros/haptic_band_ros.egg-info/SOURCES.txt'
+[0.722s] running build
+[0.722s] running build_py
+[0.722s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build
+[0.722s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib
+[0.722s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros
+[0.722s] copying haptic_band_ros/__init__.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros
+[0.723s] copying haptic_band_ros/haptic_bridge.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros
+[0.723s] running install
+[0.723s] running install_lib
+[0.724s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros
+[0.724s] copying /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros/__init__.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros
+[0.724s] copying /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros/haptic_bridge.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros
+[0.724s] byte-compiling /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros/__init__.py to __init__.cpython-310.pyc
+[0.725s] byte-compiling /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros/haptic_bridge.py to haptic_bridge.cpython-310.pyc
+[0.726s] running install_data
+[0.726s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share
+[0.726s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index
+[0.727s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index/resource_index
+[0.727s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index/resource_index/packages
+[0.727s] copying resource/haptic_band_ros -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index/resource_index/packages
+[0.727s] creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/haptic_band_ros
+[0.727s] copying package.xml -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/haptic_band_ros
+[0.727s] running install_egg_info
+[0.728s] Copying ../../build/haptic_band_ros/haptic_band_ros.egg-info to /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros-0.0.0-py3.10.egg-info
+[0.729s] running install_scripts
+[0.749s] Installing haptic_bridge script to /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/haptic_band_ros
+[0.749s] writing list of installed files to '/home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/install.log'
+[0.786s] Invoked command in '/home/gilbertsoco/Haptic-Band/Python/ros2_ws/src/haptic_band_ros' returned '0': PYTHONPATH=/home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/haptic_band_ros build --build-base /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build install --record /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/install.log --install-scripts $base/lib/haptic_band_ros --single-version-externally-managed install_data

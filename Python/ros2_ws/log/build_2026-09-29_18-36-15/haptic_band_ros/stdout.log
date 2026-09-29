@@ -1,0 +1,38 @@
+running egg_info
+creating ../../build/haptic_band_ros/haptic_band_ros.egg-info
+writing ../../build/haptic_band_ros/haptic_band_ros.egg-info/PKG-INFO
+writing dependency_links to ../../build/haptic_band_ros/haptic_band_ros.egg-info/dependency_links.txt
+writing entry points to ../../build/haptic_band_ros/haptic_band_ros.egg-info/entry_points.txt
+writing requirements to ../../build/haptic_band_ros/haptic_band_ros.egg-info/requires.txt
+writing top-level names to ../../build/haptic_band_ros/haptic_band_ros.egg-info/top_level.txt
+writing manifest file '../../build/haptic_band_ros/haptic_band_ros.egg-info/SOURCES.txt'
+reading manifest file '../../build/haptic_band_ros/haptic_band_ros.egg-info/SOURCES.txt'
+adding license file 'LICENSE'
+writing manifest file '../../build/haptic_band_ros/haptic_band_ros.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros
+copying haptic_band_ros/__init__.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros
+copying haptic_band_ros/haptic_bridge.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros
+running install
+running install_lib
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros
+copying /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros/__init__.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros
+copying /home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/build/lib/haptic_band_ros/haptic_bridge.py -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros
+byte-compiling /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros/__init__.py to __init__.cpython-310.pyc
+byte-compiling /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros/haptic_bridge.py to haptic_bridge.cpython-310.pyc
+running install_data
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index/resource_index
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index/resource_index/packages
+copying resource/haptic_band_ros -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/ament_index/resource_index/packages
+creating /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/haptic_band_ros
+copying package.xml -> /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/share/haptic_band_ros
+running install_egg_info
+Copying ../../build/haptic_band_ros/haptic_band_ros.egg-info to /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/python3.10/site-packages/haptic_band_ros-0.0.0-py3.10.egg-info
+running install_scripts
+Installing haptic_bridge script to /home/gilbertsoco/Haptic-Band/Python/ros2_ws/install/haptic_band_ros/lib/haptic_band_ros
+writing list of installed files to '/home/gilbertsoco/Haptic-Band/Python/ros2_ws/build/haptic_band_ros/install.log'
