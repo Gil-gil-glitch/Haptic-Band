@@ -1,22 +1,28 @@
+"""Demonstrate the TCP client after starting the GUI and connecting its serial port."""
+
+import argparse
 import time
-from haptic_client import HapticClient
 
-# Using Context Manager (handles connect and auto-disconnect/stop on exit)
-with HapticClient(host='localhost', port=5050) as client:
-    print("Testing Haptic Feedback via Python Client API...")
 
-    # Pulse Top motor at 100% PWM for 1 second
-    client.pulse_direction('top', pwm=255, duration=1.0)
+def main(args=None):
+    """Run a sequence through the GUI's command server, then stop all motors."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--host", default="localhost", help="GUI server host (default: localhost)")
+    parser.add_argument("--port", type=int, default=5050, help="GUI server port (default: 5050)")
+    options = parser.parse_args(args)
 
-    # Pulse Right motor at 50% PWM for 1 second
-    client.pulse_direction('right', pwm=127, duration=1.0)
+    from haptic_band_ros.haptic_client import HapticClient
 
-    # Pulse All motors at 50% (127)[cite: 5]
-    client.send_raw(127, 127, 127, 127)
-    time.sleep(1.0)
+    with HapticClient(host=options.host, port=options.port) as client:
+        print("Testing Haptic Feedback via Python Client API...")
+        client.pulse_direction("top", pwm=255, duration_s=1.0)
+        client.pulse_direction("right", pwm=127, duration_s=1.0)
+        client.send_raw(127, 127, 127, 127)
+        time.sleep(1.0)
+        client.send_raw(64, 64, 64, 64)
+        time.sleep(1.0)
+        print("Test complete.")
 
-    # Set all motors to 25% (64)[cite: 5]
-    client.send_raw(64, 64, 64, 64)
-    time.sleep(1.0)
 
-    print("Test complete.")
+if __name__ == "__main__":
+    main()
