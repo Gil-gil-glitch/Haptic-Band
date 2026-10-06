@@ -6,6 +6,7 @@ over a local socket instead (see haptic_band_ros.haptic_client).
 
 Sends the "top,right,bottom,left\\n" line the Arduino sketch expects.
 """
+
 import threading
 import time
 

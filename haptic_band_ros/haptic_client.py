@@ -6,6 +6,7 @@ Example:
     with HapticClient() as h:
         h.pulse_direction("top", 200, 0.5)
 """
+
 import socket
 import threading
 import time
@@ -44,10 +45,12 @@ class HapticClient:
         Note: duration is in SECONDS here (Java version used milliseconds).
         """
         d = direction.lower()
-        self.send_raw(pwm if d == "top" else 0,
-                      pwm if d == "right" else 0,
-                      pwm if d == "bottom" else 0,
-                      pwm if d == "left" else 0)
+        self.send_raw(
+            pwm if d == "top" else 0,
+            pwm if d == "right" else 0,
+            pwm if d == "bottom" else 0,
+            pwm if d == "left" else 0,
+        )
         time.sleep(duration_s)
         self.stop_all()
 

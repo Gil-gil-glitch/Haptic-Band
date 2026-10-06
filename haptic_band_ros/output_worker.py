@@ -15,8 +15,7 @@ class OutputWorker:
     while disconnected/resetting are discarded, including across reconnects.
     """
 
-    def __init__(self, sink, timeout_s, max_rate_hz=0.0, log=None,
-                 reconnect_s=1.0, baud=None):
+    def __init__(self, sink, timeout_s, max_rate_hz=0.0, log=None, reconnect_s=1.0, baud=None):
         self.sink = sink
         self._timeout_s = timeout_s
         self._interval = 1.0 / max_rate_hz if max_rate_hz > 0 else 0.0
@@ -29,8 +28,7 @@ class OutputWorker:
         self._ready = False
         self._pending = None
         self._last_received = 0.0
-        self._thread = threading.Thread(
-            target=self._run, name='haptic-output', daemon=True)
+        self._thread = threading.Thread(target=self._run, name="haptic-output", daemon=True)
 
     @property
     def ready(self):
@@ -79,19 +77,19 @@ class OutputWorker:
         self.sink.close()
 
     def _send(self, values):
-        data = ('{},{},{},{}\n'.format(*values)).encode('ascii')
+        data = ("{},{},{},{}\n".format(*values)).encode("ascii")
         self.sink.send(data)
         # A successful write only queues bytes. Estimate their 8N1 wire time
         # conservatively from write completion. Urgent zeros add to existing
         # debt; they must not let later nonzero targets overfill the UART.
-        self._wire_busy_until = max(
-            time.monotonic(), self._wire_busy_until
-        ) + len(data) * self._seconds_per_byte
+        self._wire_busy_until = (
+            max(time.monotonic(), self._wire_busy_until) + len(data) * self._seconds_per_byte
+        )
 
     def _run(self):
         active = False
         next_send = 0.0
-        last_connect_warning = float('-inf')
+        last_connect_warning = float("-inf")
         try:
             while not self._stop.is_set():
                 if not self.sink.connected:
@@ -105,7 +103,7 @@ class OutputWorker:
                         self._disconnect()
                         now = time.monotonic()
                         if not self._stop.is_set() and now - last_connect_warning >= 10.0:
-                            self._log('warning', f'Not connected ({exc}); retrying...')
+                            self._log("warning", f"Not connected ({exc}); retrying...")
                             last_connect_warning = now
                         self._stop.wait(self._reconnect_s)
                         continue
@@ -114,7 +112,7 @@ class OutputWorker:
                         self._ready = True
                     active = False
                     next_send = 0.0
-                    self._log('info', f'Connected: {name}; ready for new commands')
+                    self._log("info", f"Connected: {name}; ready for new commands")
 
                 with self._condition:
                     if self._stop.is_set():
@@ -142,15 +140,18 @@ class OutputWorker:
                             deadlines.append(send_ready_at)
                         if active and timeout > 0:
                             deadlines.append(self._last_received + timeout)
-                        delay = (min(threading.TIMEOUT_MAX, max(0.0, min(deadlines) - now))
-                                 if deadlines else None)
+                        delay = (
+                            min(threading.TIMEOUT_MAX, max(0.0, min(deadlines) - now))
+                            if deadlines
+                            else None
+                        )
                         self._condition.wait(delay)
                         continue
 
                 try:
                     self._send(values)
                 except OSError as exc:
-                    self._log('error', f'Send failed ({exc}); will reconnect.')
+                    self._log("error", f"Send failed ({exc}); will reconnect.")
                     self._disconnect()
                     active = False
                     self._stop.wait(self._reconnect_s)
@@ -158,7 +159,7 @@ class OutputWorker:
                     active = any(values)
                     next_send = time.monotonic() + self._interval
                     if timed_out:
-                        self._log('info', 'Command timeout: stopping motors.')
+                        self._log("info", "Command timeout: stopping motors.")
         finally:
             with self._condition:
                 self._ready = False
@@ -167,6 +168,6 @@ class OutputWorker:
                 if self.sink.connected:
                     self._send(ZERO)
             except OSError as exc:
-                self._log('warning', f'Could not send shutdown stop: {exc}')
+                self._log("warning", f"Could not send shutdown stop: {exc}")
             finally:
                 self.sink.close()

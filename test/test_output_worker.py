@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 
-ZERO = b'0,0,0,0\n'
+ZERO = b"0,0,0,0\n"
 
 
 def test_timeout_runs_without_ros_and_bypasses_rate_limit(make_worker, sink, wait_until):
@@ -17,7 +17,7 @@ def test_timeout_runs_without_ros_and_bypasses_rate_limit(make_worker, sink, wai
     assert sink.read()[0] == ZERO
     assert worker.submit((80, 0, 0, 0))
     command, sent_at = sink.read()
-    assert command == b'80,0,0,0\n'
+    assert command == b"80,0,0,0\n"
     command, stopped_at = sink.read(timeout=0.4)
     assert command == ZERO
     assert 0.04 <= stopped_at - sent_at < 0.4
@@ -42,12 +42,12 @@ def test_slow_io_does_not_block_producer_and_only_latest_target_survives(
     producer = threading.Thread(target=produce)
     producer.start()
     try:
-        assert finished.wait(0.3), 'producer blocked behind transport I/O'
+        assert finished.wait(0.3), "producer blocked behind transport I/O"
     finally:
         sink.write_gate.set()
         producer.join(timeout=1.0)
-    assert sink.read()[0] == b'1,0,0,0\n'
-    assert sink.read()[0] == b'100,0,0,0\n'
+    assert sink.read()[0] == b"1,0,0,0\n"
+    assert sink.read()[0] == b"100,0,0,0\n"
     with pytest.raises(queue.Empty):
         sink.read(timeout=0.04)
 
@@ -62,7 +62,7 @@ def test_expired_pending_target_is_not_sent_after_slow_write(make_worker, sink, 
     worker.submit((2, 0, 0, 0))
     time.sleep(0.09)
     sink.write_gate.set()
-    assert sink.read()[0] == b'1,0,0,0\n'  # Already in flight; cannot be recalled.
+    assert sink.read()[0] == b"1,0,0,0\n"  # Already in flight; cannot be recalled.
     assert sink.read()[0] == ZERO
     with pytest.raises(queue.Empty):
         sink.read(timeout=0.04)
@@ -81,7 +81,7 @@ def test_rate_limit_coalesces_targets_and_explicit_stop_is_immediate(
         sink.read(timeout=0.04)
     worker.submit((3, 0, 0, 0))
     command, second_at = sink.read()
-    assert command == b'3,0,0,0\n'
+    assert command == b"3,0,0,0\n"
     assert second_at - first_at >= 0.18
     worker.submit((0, 0, 0, 0))
     assert sink.read(timeout=0.15)[0] == ZERO
@@ -106,7 +106,7 @@ def test_reset_and_reconnect_discard_commands(make_worker, sink, wait_until):
     with pytest.raises(queue.Empty):
         sink.read(timeout=0.04)
     worker.submit((40, 0, 0, 0))
-    assert sink.read()[0] == b'40,0,0,0\n'
+    assert sink.read()[0] == b"40,0,0,0\n"
 
 
 def test_runtime_timeout_change_stops_existing_output(make_worker, sink, wait_until):
@@ -147,13 +147,13 @@ def test_shutdown_interrupts_board_reset(make_worker, sink):
     closer = threading.Thread(target=close)
     closer.start()
     try:
-        assert finished.wait(0.3), 'shutdown waited for board reset to finish'
+        assert finished.wait(0.3), "shutdown waited for board reset to finish"
     finally:
         sink.connect_gate.set()
         closer.join(timeout=1.0)
 
 
-@pytest.mark.parametrize('max_rate_hz', [0.0, 50.0])
+@pytest.mark.parametrize("max_rate_hz", [0.0, 50.0])
 def test_alternating_stop_does_not_accumulate_uart_backlog(
     make_worker, sink, wait_until, max_rate_hz
 ):
@@ -163,7 +163,7 @@ def test_alternating_stop_does_not_accumulate_uart_backlog(
     for _ in range(20):
         worker.submit((255, 255, 255, 255))
         record = sink.read()
-        assert record[0] == b'255,255,255,255\n'
+        assert record[0] == b"255,255,255,255\n"
         records.append(record)
         worker.submit((0, 0, 0, 0))
         record = sink.read()
@@ -179,7 +179,7 @@ def test_alternating_stop_does_not_accumulate_uart_backlog(
         assert wire_free_at - queued_at <= (16 + 8) / 960.0 + 0.001
 
 
-@pytest.mark.parametrize('target', [(80, 0, 0, 0), (0, 0, 0, 0)])
+@pytest.mark.parametrize("target", [(80, 0, 0, 0), (0, 0, 0, 0)])
 def test_connection_zero_consumes_wire_budget(make_worker, sink, wait_until, target):
     worker = make_worker(timeout_s=0.0, baud=800)
     wait_until(lambda: worker.ready)
@@ -187,7 +187,7 @@ def test_connection_zero_consumes_wire_budget(make_worker, sink, wait_until, tar
     assert initial_zero == ZERO
     worker.submit(target)
     command, sent_at = sink.read()
-    assert command == ('{},{},{},{}\n'.format(*target)).encode('ascii')
+    assert command == ("{},{},{},{}\n".format(*target)).encode("ascii")
     assert sent_at - initial_at >= len(ZERO) * 10 / 800 - 0.001
 
 
@@ -200,7 +200,7 @@ def test_latest_target_replaces_pending_during_wire_wait(make_worker, sink, wait
     worker.submit((80, 0, 0, 0))
     worker.submit((120, 0, 0, 0))
     newest, newest_at = sink.read()
-    assert newest == b'120,0,0,0\n'
+    assert newest == b"120,0,0,0\n"
     assert newest_at - sent_at >= len(first) * 10 / 1600 - 0.001
     with pytest.raises(queue.Empty):
         sink.read(timeout=0.03)
@@ -221,7 +221,7 @@ def test_watchdog_zero_keeps_wire_debt_for_next_target(make_worker, sink, wait_u
     worker.set_timeout(0.0)
     worker.submit((80, 0, 0, 0))
     command, resumed_at = sink.read()
-    assert command == b'80,0,0,0\n'
+    assert command == b"80,0,0,0\n"
     assert resumed_at - sent_at >= (len(first) + len(ZERO)) * 10 / 1600 - 0.001
 
 
@@ -232,7 +232,7 @@ def test_60_hz_state_updates_have_no_default_50_hz_gate(monkeypatch, sink, wait_
     # This checks scheduling decisions at 60 Hz without relying on a lightly
     # loaded OS to hit 16.7 ms wall-clock deadlines in a performance test.
     clock = SimpleNamespace(now=100.0)
-    monkeypatch.setattr(output_worker, 'time', SimpleNamespace(monotonic=lambda: clock.now))
+    monkeypatch.setattr(output_worker, "time", SimpleNamespace(monotonic=lambda: clock.now))
     worker = output_worker.OutputWorker(sink, timeout_s=0.5, baud=115200)
     completed = queue.Queue()
     send = worker._send
@@ -242,7 +242,7 @@ def test_60_hz_state_updates_have_no_default_50_hz_gate(monkeypatch, sink, wait_
         # Signal only after the transmission budget has been recorded.
         completed.put(tuple(values))
 
-    monkeypatch.setattr(worker, '_send', observe_send)
+    monkeypatch.setattr(worker, "_send", observe_send)
     worker.start()
     try:
         wait_until(lambda: worker.ready)
@@ -256,9 +256,14 @@ def test_60_hz_state_updates_have_no_default_50_hz_gate(monkeypatch, sink, wait_
         worker.close()
 
 
-@pytest.mark.parametrize('timeout_s,max_rate_hz', [
-    (1e20, 0.0), (0.0, 1e-20), (0.0, 5e-324),
-])
+@pytest.mark.parametrize(
+    "timeout_s,max_rate_hz",
+    [
+        (1e20, 0.0),
+        (0.0, 1e-20),
+        (0.0, 5e-324),
+    ],
+)
 def test_large_waits_remain_interruptible_without_killing_worker(
     make_worker, sink, wait_until, timeout_s, max_rate_hz
 ):
@@ -266,7 +271,7 @@ def test_large_waits_remain_interruptible_without_killing_worker(
     wait_until(lambda: worker.ready)
     sink.read()
     worker.submit((80, 0, 0, 0))
-    assert sink.read()[0] == b'80,0,0,0\n'
+    assert sink.read()[0] == b"80,0,0,0\n"
     # Either a very distant watchdog or a pending rate-limited target must
     # wait interruptibly, not overflow the platform's Condition.wait limit.
     if max_rate_hz > 0:

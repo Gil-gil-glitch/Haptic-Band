@@ -7,6 +7,7 @@ always reflects exactly what's being sent.
 Callbacks are invoked on background threads; the GUI marshals them onto the
 Tk thread (see MainApp._poll_events).
 """
+
 import socket
 import threading
 
@@ -15,7 +16,7 @@ class CommandServer:
     def __init__(self, port, on_command, on_status=None):
         self.port = port
         self._on_command = on_command  # (top, right, bottom, left) -> None
-        self._on_status = on_status    # (message) -> None
+        self._on_status = on_status  # (message) -> None
         self._running = False
         self._server = None
         self._thread = None
@@ -23,7 +24,8 @@ class CommandServer:
     def start(self):
         self._running = True
         self._thread = threading.Thread(
-            target=self._accept_loop, name="command-server-accept", daemon=True)
+            target=self._accept_loop, name="command-server-accept", daemon=True
+        )
         self._thread.start()
 
     def _status(self, message):

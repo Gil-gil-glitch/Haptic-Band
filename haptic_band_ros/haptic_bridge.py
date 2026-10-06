@@ -56,23 +56,23 @@ class SerialSink:
 
     def describe(self):
         """Describe the configured output."""
-        return f'serial {self.port_name or "auto"} @ {self.baud}'
+        return f"serial {self.port_name or 'auto'} @ {self.baud}"
 
     def connect(self, stop):
         """Open the port and wait interruptibly for the board to reset."""
-        name = find_port() if self.port_name in ('', 'auto') else self.port_name
+        name = find_port() if self.port_name in ("", "auto") else self.port_name
         if not name:
-            raise OSError('no serial ports found')
+            raise OSError("no serial ports found")
         self._ser = serial.Serial(name, self.baud, write_timeout=self.io_timeout_s)
         if stop.wait(self.reset_delay_s):
-            raise ConnectionAbortedError('shutdown during board reset')
+            raise ConnectionAbortedError("shutdown during board reset")
         self._ser.reset_input_buffer()
         return name
 
     def send(self, data):
         """Write with a timeout; avoid the unbounded POSIX flush/tcdrain call."""
         if self._ser.write(data) != len(data):
-            raise OSError('incomplete serial write')
+            raise OSError("incomplete serial write")
 
     def close(self):
         """Release the serial port."""
@@ -100,14 +100,13 @@ class SocketSink:
 
     def describe(self):
         """Describe the configured output."""
-        return f'GUI socket {self.host}:{self.port}'
+        return f"GUI socket {self.host}:{self.port}"
 
     def connect(self, stop):
         """Connect with a timeout and disable TCP small-packet buffering."""
-        self._sock = socket.create_connection(
-            (self.host, self.port), timeout=self.io_timeout_s)
+        self._sock = socket.create_connection((self.host, self.port), timeout=self.io_timeout_s)
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        return f'{self.host}:{self.port}'
+        return f"{self.host}:{self.port}"
 
     def send(self, data):
         """Send a complete line using the socket's write timeout."""
@@ -125,25 +124,25 @@ class SocketSink:
 
 def validate_settings(settings):
     """Reject invalid settings at startup and in parameter callbacks."""
-    for name in ('timeout_s', 'reset_delay_s', 'io_timeout_s', 'max_rate_hz'):
+    for name in ("timeout_s", "reset_delay_s", "io_timeout_s", "max_rate_hz"):
         value = settings.get(name)
         if value is None:
             continue
-        minimum_inclusive = name in ('timeout_s', 'reset_delay_s', 'max_rate_hz')
-        if not isinstance(value, float) or not math.isfinite(value) or (
-            value < 0 if minimum_inclusive else value <= 0
+        minimum_inclusive = name in ("timeout_s", "reset_delay_s", "max_rate_hz")
+        if (
+            not isinstance(value, float)
+            or not math.isfinite(value)
+            or (value < 0 if minimum_inclusive else value <= 0)
         ):
-            bound = '>= 0' if minimum_inclusive else '> 0'
-            raise ValueError(f'{name} must be a finite floating-point value {bound}')
-    if 'baud' in settings and settings['baud'] <= 0:
-        raise ValueError('baud must be positive')
-    if 'tcp_port' in settings and not 1 <= settings['tcp_port'] <= 65535:
-        raise ValueError('tcp_port must be between 1 and 65535')
-    if 'output' in settings and settings['output'] not in ('serial', 'gui_socket'):
+            bound = ">= 0" if minimum_inclusive else "> 0"
+            raise ValueError(f"{name} must be a finite floating-point value {bound}")
+    if "baud" in settings and settings["baud"] <= 0:
+        raise ValueError("baud must be positive")
+    if "tcp_port" in settings and not 1 <= settings["tcp_port"] <= 65535:
+        raise ValueError("tcp_port must be between 1 and 65535")
+    if "output" in settings and settings["output"] not in ("serial", "gui_socket"):
         raise ValueError("output must be 'serial' or 'gui_socket'")
-    if 'reliability' in settings and settings['reliability'] not in (
-        'best_effort', 'reliable'
-    ):
+    if "reliability" in settings and settings["reliability"] not in ("best_effort", "reliable"):
         raise ValueError("reliability must be 'best_effort' or 'reliable'")
 
 
@@ -151,63 +150,77 @@ class HapticBridge(Node):
     """Subscribe to motor setpoints and hand them to a dedicated I/O worker."""
 
     def __init__(self, **kwargs):
-        super().__init__('haptic_bridge', **kwargs)
+        super().__init__("haptic_bridge", **kwargs)
         self.worker = None
         defaults = {
-            'topic': 'haptic/motors',
-            'output': 'serial',
-            'port': 'auto',
-            'baud': 9600,
-            'host': '127.0.0.1',
-            'tcp_port': 5050,
-            'reset_delay_s': 2.0,
-            'io_timeout_s': 0.1,
-            'max_rate_hz': 0.0,
-            'reliability': 'best_effort',
-            'timeout_s': 0.5,
+            "topic": "haptic/motors",
+            "output": "serial",
+            "port": "auto",
+            "baud": 9600,
+            "host": "127.0.0.1",
+            "tcp_port": 5050,
+            "reset_delay_s": 2.0,
+            "io_timeout_s": 0.1,
+            "max_rate_hz": 0.0,
+            "reliability": "best_effort",
+            "timeout_s": 0.5,
         }
         descriptions = {
-            'timeout_s': 'Command timeout in monotonic seconds; 0 disables automatic stop.',
-            'max_rate_hz': 'Optional software rate limit; 0 disables it. Restart to change.',
+            "timeout_s": "Command timeout in monotonic seconds; 0 disables automatic stop.",
+            "max_rate_hz": "Optional software rate limit; 0 disables it. Restart to change.",
         }
         try:
             for name, default in defaults.items():
-                description = descriptions.get(name, 'Startup setting; restart to change.')
-                self.declare_parameter(name, default, ParameterDescriptor(
-                    read_only=name != 'timeout_s', description=description))
+                description = descriptions.get(name, "Startup setting; restart to change.")
+                self.declare_parameter(
+                    name,
+                    default,
+                    ParameterDescriptor(read_only=name != "timeout_s", description=description),
+                )
             settings = {name: self.get_parameter(name).value for name in defaults}
             validate_settings(settings)
 
-            max_rate = settings['max_rate_hz']
-            if settings['output'] == 'serial':
+            max_rate = settings["max_rate_hz"]
+            if settings["output"] == "serial":
                 self.sink = SerialSink(
-                    settings['port'], settings['baud'], settings['reset_delay_s'],
-                    settings['io_timeout_s'])
+                    settings["port"],
+                    settings["baud"],
+                    settings["reset_delay_s"],
+                    settings["io_timeout_s"],
+                )
             else:
                 self.sink = SocketSink(
-                    settings['host'], settings['tcp_port'], settings['io_timeout_s'])
+                    settings["host"], settings["tcp_port"], settings["io_timeout_s"]
+                )
 
             self.worker = OutputWorker(
-                self.sink, settings['timeout_s'], max_rate, log=self._log_output,
-                baud=settings['baud'] if settings['output'] == 'serial' else None)
+                self.sink,
+                settings["timeout_s"],
+                max_rate,
+                log=self._log_output,
+                baud=settings["baud"] if settings["output"] == "serial" else None,
+            )
             self.add_on_set_parameters_callback(self._validate_parameters)
             self.add_post_set_parameters_callback(self._apply_parameters)
 
             qos = QoSProfile(
                 history=HistoryPolicy.KEEP_LAST,
                 depth=1,
-                reliability=(ReliabilityPolicy.BEST_EFFORT
-                             if settings['reliability'] == 'best_effort'
-                             else ReliabilityPolicy.RELIABLE),
+                reliability=(
+                    ReliabilityPolicy.BEST_EFFORT
+                    if settings["reliability"] == "best_effort"
+                    else ReliabilityPolicy.RELIABLE
+                ),
                 durability=DurabilityPolicy.VOLATILE,
             )
-            self.create_subscription(Int32MultiArray, settings['topic'], self.on_msg, qos)
-            rate_description = f'{max_rate:g}Hz' if max_rate > 0 else 'disabled'
+            self.create_subscription(Int32MultiArray, settings["topic"], self.on_msg, qos)
+            rate_description = f"{max_rate:g}Hz" if max_rate > 0 else "disabled"
             self.get_logger().info(
                 f"Listening on '{settings['topic']}' [top,right,bottom,left] -> "
-                f'{self.sink.describe()}; '
+                f"{self.sink.describe()}; "
                 f"QoS={settings['reliability']}, depth=1; "
-                f"timeout={settings['timeout_s']}s; software rate limit={rate_description}")
+                f"timeout={settings['timeout_s']}s; software rate limit={rate_description}"
+            )
             self.worker.start()
         except Exception:
             self.close()
@@ -226,19 +239,21 @@ class HapticBridge(Node):
 
     def _apply_parameters(self, parameters):
         for parameter in parameters:
-            if parameter.name == 'timeout_s':
+            if parameter.name == "timeout_s":
                 self.worker.set_timeout(parameter.value)
 
     def on_msg(self, msg):
         """Validate and replace a target without performing transport I/O."""
         if len(msg.data) != 4:
             self.get_logger().warning(
-                f'Expected 4 values [top,right,bottom,left], got {len(msg.data)}; ignored.',
-                throttle_duration_sec=5.0)
+                f"Expected 4 values [top,right,bottom,left], got {len(msg.data)}; ignored.",
+                throttle_duration_sec=5.0,
+            )
             return
         if not self.worker.submit(tuple(clamp(value) for value in msg.data)):
             self.get_logger().warning(
-                'Command dropped: output not ready.', throttle_duration_sec=5.0)
+                "Command dropped: output not ready.", throttle_duration_sec=5.0
+            )
 
     def close(self):
         """Stop the transport owner before destroying the ROS node."""
@@ -263,5 +278,5 @@ def main(args=None):
             rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

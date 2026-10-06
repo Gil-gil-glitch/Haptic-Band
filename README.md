@@ -87,6 +87,8 @@ From the repository root, after sourcing ROS:
 
 ```bash
 python3 -m pytest -q test/test_output_worker.py test/test_haptic_bridge.py test/test_transports.py
+uvx ruff format --check .
 ```
 
-Tests use simulated outputs, not real hardware.
+Tests use simulated outputs, not real hardware. Apply formatting with
+`uvx ruff format .`; Ruff is not a runtime dependency.
