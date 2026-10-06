@@ -1,3 +1,11 @@
-### Python ###
-**/log
-**/install
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Local build output
+/build/
+/install/
+/log/
+/dist/

@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from tkinter import filedialog, ttk
 
-from command_server import CommandServer
-from motor_gauge import MotorGauge
-from serial_manager import SerialManager
+from .command_server import CommandServer
+from .motor_gauge import MotorGauge
+from .serial_manager import SerialManager
 
 COMMAND_SERVER_PORT = 5050
 

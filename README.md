@@ -15,8 +15,8 @@ colcon build --packages-select haptic_band_ros --symlink-install
 source install/setup.bash
 ```
 
-The ROS package is in `src/haptic_band_ros/`. GUI and demonstration scripts
-are alongside the driver in its `haptic_band_ros/` Python module.
+The repository root is the ROS package. Driver code is in `haptic_band_ros/`,
+the GUI in `haptic_band_ros/gui/`, and standalone demos in `examples/`.
 
 ## Run and control
 
@@ -60,10 +60,11 @@ crash; that requires a watchdog in the firmware.
 ## Optional GUI and examples
 
 ```bash
-python3 ~/ros2_ws/src/Haptic-Band/src/haptic_band_ros/haptic_band_ros/main_app.py
+ros2 run haptic_band_ros haptic_gui
 ```
 
-Connect the serial port in the GUI before using ROS forwarding:
+Alternatively, use `python3 -m haptic_band_ros.gui`. Connect the serial port in
+the GUI before using ROS forwarding:
 
 ```bash
 ros2 run haptic_band_ros haptic_bridge --ros-args -p output:=gui_socket
@@ -76,8 +77,8 @@ logging; its gauges show commanded values, not measured vibration.
 After sourcing the workspace, example usage is available with:
 
 ```bash
-python3 src/haptic_band_ros/haptic_band_ros/control.py --help
-python3 src/haptic_band_ros/haptic_band_ros/example.py --help
+python3 examples/serial_control.py --help
+python3 examples/gui_client.py --help
 ```
 
 ## Development
@@ -85,7 +86,6 @@ python3 src/haptic_band_ros/haptic_band_ros/example.py --help
 From the repository root, after sourcing ROS:
 
 ```bash
-cd src/haptic_band_ros
 python3 -m pytest -q test/test_output_worker.py test/test_haptic_bridge.py test/test_transports.py
 ```
 

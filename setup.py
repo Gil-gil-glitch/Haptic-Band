@@ -24,7 +24,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'haptic_bridge = haptic_band_ros.haptic_bridge:main'
+            'haptic_bridge = haptic_band_ros.haptic_bridge:main',
+            'haptic_gui = haptic_band_ros.gui.main_app:main'
         ],
     },
 )
