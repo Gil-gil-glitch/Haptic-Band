@@ -1,13 +1,14 @@
 """Haptic Wristband Command Center (tkinter port of the JavaFX MainApp)."""
+
 import queue
 import tkinter as tk
 from dataclasses import dataclass
 from datetime import datetime
 from tkinter import filedialog, ttk
 
-from command_server import CommandServer
-from motor_gauge import MotorGauge
-from serial_manager import SerialManager
+from .command_server import CommandServer
+from .motor_gauge import MotorGauge
+from .serial_manager import SerialManager
 
 COMMAND_SERVER_PORT = 5050
 
@@ -37,18 +38,39 @@ def _label(parent, text, **kw):
 
 
 def _button(parent, text, command, fg=TEXT, border=BORDER, **kw):
-    b = tk.Button(parent, text=text, command=command, bg=BTN, fg=fg,
-                  activebackground=BTN_HOVER, activeforeground=fg, relief="flat",
-                  highlightthickness=1, highlightbackground=border,
-                  padx=10, pady=4, cursor="hand2", **kw)
+    b = tk.Button(
+        parent,
+        text=text,
+        command=command,
+        bg=BTN,
+        fg=fg,
+        activebackground=BTN_HOVER,
+        activeforeground=fg,
+        relief="flat",
+        highlightthickness=1,
+        highlightbackground=border,
+        padx=10,
+        pady=4,
+        cursor="hand2",
+        **kw,
+    )
     b.bind("<Enter>", lambda e: b.config(bg=BTN_HOVER))
     b.bind("<Leave>", lambda e: b.config(bg=BTN))
     return b
 
 
 def _panel(parent, title):
-    f = tk.LabelFrame(parent, text=title, bg=PANEL, fg=TEXT,
-                      font=("Segoe UI", 9, "bold"), bd=1, relief="solid", padx=10, pady=8)
+    f = tk.LabelFrame(
+        parent,
+        text=title,
+        bg=PANEL,
+        fg=TEXT,
+        font=("Segoe UI", 9, "bold"),
+        bd=1,
+        relief="solid",
+        padx=10,
+        pady=8,
+    )
     return f
 
 
@@ -67,7 +89,7 @@ class MainApp:
         self.port_var = tk.StringVar()
 
         self.sequence_jobs = []  # pending after() ids (cancellable)
-        self.steps = []          # list[PatternStep]
+        self.steps = []  # list[PatternStep]
 
         root.title("Haptic Wristband Command Center")
         root.geometry("1050x780")
@@ -93,12 +115,20 @@ class MainApp:
         self.port_combo.pack(side="left", padx=(0, 12))
         _button(bar, "Refresh", self.refresh_ports).pack(side="left", padx=(0, 12))
         _label(bar, "Baud Rate:").pack(side="left", padx=(0, 6))
-        tk.Entry(bar, textvariable=self.baud_var, width=8, bg=INPUT, fg=TEXT,
-                 insertbackground=TEXT, relief="flat").pack(side="left", padx=(0, 12))
+        tk.Entry(
+            bar,
+            textvariable=self.baud_var,
+            width=8,
+            bg=INPUT,
+            fg=TEXT,
+            insertbackground=TEXT,
+            relief="flat",
+        ).pack(side="left", padx=(0, 12))
         self.connect_btn = _button(bar, "Connect", self.toggle_connection)
         self.connect_btn.pack(side="left", padx=(0, 12))
-        self.status_lbl = tk.Label(bar, textvariable=self.connected_var, bg=BG, fg=RED,
-                                   font=("Segoe UI", 9, "bold"))
+        self.status_lbl = tk.Label(
+            bar, textvariable=self.connected_var, bg=BG, fg=RED, font=("Segoe UI", 9, "bold")
+        )
         self.status_lbl.pack(side="left")
         return bar
 
@@ -111,11 +141,13 @@ class MainApp:
         cross.pack()
         self.top_gauge, self.right_gauge = MotorGauge(cross, "TOP"), MotorGauge(cross, "RIGHT")
         self.bottom_gauge, self.left_gauge = MotorGauge(cross, "BOTTOM"), MotorGauge(cross, "LEFT")
-        compass = tk.Frame(cross, bg=BTN, highlightthickness=1, highlightbackground=BLURPLE,
-                           width=80, height=80)
+        compass = tk.Frame(
+            cross, bg=BTN, highlightthickness=1, highlightbackground=BLURPLE, width=80, height=80
+        )
         compass.pack_propagate(False)
-        tk.Label(compass, text="WRIST", bg=BTN, fg=BLURPLE,
-                 font=("Segoe UI", 9, "bold")).pack(expand=True)
+        tk.Label(compass, text="WRIST", bg=BTN, fg=BLURPLE, font=("Segoe UI", 9, "bold")).pack(
+            expand=True
+        )
         self.top_gauge.grid(row=0, column=1, padx=15, pady=5)
         self.left_gauge.grid(row=1, column=0, padx=15, pady=5)
         compass.grid(row=1, column=1, padx=15, pady=5)
@@ -126,14 +158,30 @@ class MainApp:
         manual = _panel(center, "Manual Overrides")
         manual.pack(fill="x", pady=(0, 20))
         self.sliders = {}
-        for i, (key, name) in enumerate([("top", "Top (Forward)"), ("right", "Right"),
-                                         ("bottom", "Bottom (Back)"), ("left", "Left")]):
+        for i, (key, name) in enumerate(
+            [
+                ("top", "Top (Forward)"),
+                ("right", "Right"),
+                ("bottom", "Bottom (Back)"),
+                ("left", "Left"),
+            ]
+        ):
             var = tk.IntVar(value=0)
             self.sliders[key] = var
             _label(manual, name, width=12, anchor="w").grid(row=i, column=0, pady=6)
-            tk.Scale(manual, from_=0, to=255, orient="horizontal", variable=var, length=220,
-                     showvalue=False, bg=PANEL, troughcolor=INPUT, highlightthickness=0,
-                     activebackground=BLURPLE).grid(row=i, column=1, padx=10)
+            tk.Scale(
+                manual,
+                from_=0,
+                to=255,
+                orient="horizontal",
+                variable=var,
+                length=220,
+                showvalue=False,
+                bg=PANEL,
+                troughcolor=INPUT,
+                highlightthickness=0,
+                activebackground=BLURPLE,
+            ).grid(row=i, column=1, padx=10)
             _label(manual, "", textvariable=var, width=4).grid(row=i, column=2)
         btns = tk.Frame(manual, bg=PANEL)
         btns.grid(row=4, column=0, columnspan=3, sticky="w", pady=(10, 0))
@@ -143,10 +191,12 @@ class MainApp:
         # Presets
         presets = _panel(center, "Quick Triggers")
         presets.pack(fill="x")
-        _button(presets, "Pulse Forward",
-                lambda: self.apply_and_send(255, 0, 0, 0, "preset")).pack(side="left", padx=(0, 10))
-        _button(presets, "Global 50%",
-                lambda: self.apply_and_send(127, 127, 127, 127, "preset")).pack(side="left", padx=(0, 10))
+        _button(
+            presets, "Pulse Forward", lambda: self.apply_and_send(255, 0, 0, 0, "preset")
+        ).pack(side="left", padx=(0, 10))
+        _button(
+            presets, "Global 50%", lambda: self.apply_and_send(127, 127, 127, 127, "preset")
+        ).pack(side="left", padx=(0, 10))
         _button(presets, "Run Demo Sweep", self.run_test_sequence).pack(side="left")
         return center
 
@@ -175,9 +225,17 @@ class MainApp:
         self.dur_spin.pack(side="left", padx=(0, 8))
         _button(row2, "Add", self.add_step).pack(side="left")
 
-        self.step_list = tk.Listbox(pane, height=12, bg=INPUT, fg=TEXT, selectbackground=BLURPLE,
-                                    selectforeground="white", highlightbackground=BORDER,
-                                    relief="flat", exportselection=False)
+        self.step_list = tk.Listbox(
+            pane,
+            height=12,
+            bg=INPUT,
+            fg=TEXT,
+            selectbackground=BLURPLE,
+            selectforeground="white",
+            highlightbackground=BORDER,
+            relief="flat",
+            exportselection=False,
+        )
         self.step_list.pack(fill="both", expand=True, pady=(0, 8))
 
         edit = tk.Frame(pane, bg=PANEL)
@@ -191,21 +249,44 @@ class MainApp:
         _button(files, "Save...", self.save_pattern).pack(side="left", padx=(0, 8))
         _button(files, "Load...", self.load_pattern).pack(side="left")
 
-        _button(pane, "▶ Play Sequence", self.play_pattern, fg=GREEN, border=GREEN,
-                font=("Segoe UI", 9, "bold")).pack(fill="x")
+        _button(
+            pane,
+            "▶ Play Sequence",
+            self.play_pattern,
+            fg=GREEN,
+            border=GREEN,
+            font=("Segoe UI", 9, "bold"),
+        ).pack(fill="x")
         return pane
 
     def _build_bottom(self):
         box = tk.Frame(self.root, bg=BG)
         _label(box, "System Log").pack(anchor="w")
-        self.log_area = tk.Text(box, height=6, bg=INPUT, fg=GREEN, relief="flat",
-                                highlightthickness=1, highlightbackground=BORDER, state="disabled")
+        self.log_area = tk.Text(
+            box,
+            height=6,
+            bg=INPUT,
+            fg=GREEN,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=BORDER,
+            state="disabled",
+        )
         self.log_area.pack(fill="x", pady=8)
-        tk.Checkbutton(box, text="Log commands to CSV", variable=self.csv_var,
-                       command=self.on_csv_toggle, bg=BG, fg=MUTED, selectcolor=INPUT,
-                       activebackground=BG, activeforeground=MUTED).pack(anchor="w")
-        tk.Label(box, textvariable=self.server_var, bg=BG, fg="#72767d",
-                 font=("Segoe UI", 9, "italic")).pack(anchor="w", pady=(8, 0))
+        tk.Checkbutton(
+            box,
+            text="Log commands to CSV",
+            variable=self.csv_var,
+            command=self.on_csv_toggle,
+            bg=BG,
+            fg=MUTED,
+            selectcolor=INPUT,
+            activebackground=BG,
+            activeforeground=MUTED,
+        ).pack(anchor="w")
+        tk.Label(
+            box, textvariable=self.server_var, bg=BG, fg="#72767d", font=("Segoe UI", 9, "italic")
+        ).pack(anchor="w", pady=(8, 0))
         return box
 
     # -------------------------------------------------------------- Serial
@@ -271,8 +352,9 @@ class MainApp:
 
     def apply_sliders(self):
         s = self.sliders
-        self.apply_and_send(s["top"].get(), s["right"].get(),
-                            s["bottom"].get(), s["left"].get(), "manual")
+        self.apply_and_send(
+            s["top"].get(), s["right"].get(), s["bottom"].get(), s["left"].get(), "manual"
+        )
 
     def halt_all(self):
         for var in self.sliders.values():
@@ -334,15 +416,19 @@ class MainApp:
                 r = pwm if ("Right" in d or all_m) else 0
                 b = pwm if ("Bottom" in d or all_m) else 0
                 l = pwm if ("Left" in d or all_m) else 0
-            self._schedule(delay, lambda v=(t, r, b, l): self.apply_and_send(*v, "custom_sequence"))
+            self._schedule(
+                delay, lambda v=(t, r, b, l): self.apply_and_send(*v, "custom_sequence")
+            )
             delay += step.duration_ms
         self._schedule(delay, lambda: self.apply_and_send(0, 0, 0, 0, "sequence_end"))
         self.log(f"Playing custom sequence ({len(self.steps)} steps)...")
 
     def save_pattern(self):
         path = filedialog.asksaveasfilename(
-            title="Save Haptic Pattern", defaultextension=".hpt",
-            filetypes=[("Haptic Files", "*.hpt")])
+            title="Save Haptic Pattern",
+            defaultextension=".hpt",
+            filetypes=[("Haptic Files", "*.hpt")],
+        )
         if not path:
             return
         try:
@@ -355,7 +441,8 @@ class MainApp:
 
     def load_pattern(self):
         path = filedialog.askopenfilename(
-            title="Load Haptic Pattern", filetypes=[("Haptic Files", "*.hpt")])
+            title="Load Haptic Pattern", filetypes=[("Haptic Files", "*.hpt")]
+        )
         if not path:
             return
         try:
@@ -413,13 +500,18 @@ class MainApp:
     def choose_csv_file(self):
         default = "haptic-session-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".csv"
         path = filedialog.asksaveasfilename(
-            title="Choose CSV log file", initialfile=default, defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")], confirmoverwrite=False)
+            title="Choose CSV log file",
+            initialfile=default,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+            confirmoverwrite=False,
+        )
         if not path:
             self.csv_var.set(False)
             return
         try:
             import os
+
             is_new = not os.path.exists(path) or os.path.getsize(path) == 0
             self.csv_file = open(path, "a", encoding="utf-8", newline="")
             if is_new:

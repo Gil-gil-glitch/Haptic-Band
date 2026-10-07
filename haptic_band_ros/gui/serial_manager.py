@@ -2,10 +2,11 @@
 
 Only one process can hold a COM port open at a time, so the GUI app is the
 single owner of the serial link. Other control code talks to CommandServer
-over a local socket instead (see haptic_client.py).
+over a local socket instead (see haptic_band_ros.haptic_client).
 
 Sends the "top,right,bottom,left\\n" line the Arduino sketch expects.
 """
+
 import threading
 import time
 
